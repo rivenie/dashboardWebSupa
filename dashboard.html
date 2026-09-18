@@ -3,48 +3,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Seguridad</title>
+    <title>Dashboard Ejecutivo | Seguridad Patrimonial</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/dashboard.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div id="loading" class="loading">Cargando dashboard...</div>
 
-    <div id="dashboard" class="dashboard" style="display: none;">
-        <header class="header">
-            <h1>Dashboard de Seguridad Patrimonial</h1>
-            <span id="sheetName"></span>
+    <div id="loading" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <p>Cargando dashboard...</p>
+    </div>
+
+    <div id="dashboard" class="dashboard-section" style="display: none;">
+
+        <!-- Header ejecutivo -->
+        <header class="exec-header">
+            <div class="exec-title">
+                <div class="exec-logo">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div>
+                    <h1>Dashboard Ejecutivo</h1>
+                    <span class="exec-subtitle" id="sheetName">Control Patrimonial</span>
+                </div>
+            </div>
+            <div class="exec-actions">
+                <span class="exec-date">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span id="fechaActual"></span>
+                </span>
+            </div>
         </header>
 
+        <!-- KPIs -->
         <section class="kpi-row">
             <div class="kpi-card">
-                <span class="kpi-label">Total Registros</span>
-                <span class="kpi-value" id="kpiTotal">0</span>
+                <div class="kpi-icon-circle">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <div class="kpi-content">
+                    <span class="kpi-title">Total Registros</span>
+                    <span class="kpi-main" id="kpiTotal">0</span>
+                    <span class="kpi-trend trend-up">
+                        <i class="fas fa-arrow-up"></i> <span id="kpiTotalTrend">+0%</span>
+                    </span>
+                </div>
             </div>
+
             <div class="kpi-card">
-                <span class="kpi-label">Incidencias</span>
-                <span class="kpi-value" id="kpiIncidencias">0</span>
+                <div class="kpi-icon-circle icon-red">
+                    <i class="fas fa-triangle-exclamation"></i>
+                </div>
+                <div class="kpi-content">
+                    <span class="kpi-title">Incidencias</span>
+                    <span class="kpi-main" id="kpiIncidencias">0</span>
+                    <span class="kpi-trend trend-down">
+                        <i class="fas fa-arrow-down"></i> <span id="kpiIncTrend">-0%</span>
+                    </span>
+                </div>
             </div>
+
             <div class="kpi-card">
-                <span class="kpi-label">Cerrados</span>
-                <span class="kpi-value" id="kpiCerrados">0</span>
+                <div class="kpi-icon-circle icon-green">
+                    <i class="fas fa-circle-check"></i>
+                </div>
+                <div class="kpi-content">
+                    <span class="kpi-title">Cerrados</span>
+                    <span class="kpi-main" id="kpiCerrados">0</span>
+                    <span class="kpi-trend trend-up">
+                        <i class="fas fa-arrow-up"></i> <span id="kpiCerradosTrend">+0%</span>
+                    </span>
+                </div>
             </div>
+
             <div class="kpi-card">
-                <span class="kpi-label">En Proceso</span>
-                <span class="kpi-value" id="kpiProceso">0</span>
+                <div class="kpi-icon-circle icon-orange">
+                    <i class="fas fa-spinner"></i>
+                </div>
+                <div class="kpi-content">
+                    <span class="kpi-title">En Proceso</span>
+                    <span class="kpi-main" id="kpiProceso">0</span>
+                    <span class="kpi-trend trend-down">
+                        <i class="fas fa-arrow-down"></i> <span id="kpiProcTrend">-0%</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-icon-circle icon-cyan">
+                    <i class="fas fa-bullseye"></i>
+                </div>
+                <div class="kpi-content">
+                    <span class="kpi-title">Eficiencia</span>
+                    <span class="kpi-main" id="kpiEficiencia">0%</span>
+                    <span class="kpi-trend trend-up">
+                        <i class="fas fa-arrow-up"></i> <span id="kpiEfTrend">+0%</span>
+                    </span>
+                </div>
             </div>
         </section>
 
-        <section class="charts">
-            <div class="chart-box">
-                <h3>Por Turno</h3>
-                <canvas id="chartTurno"></canvas>
+        <!-- Filtros -->
+        <section class="filters-row">
+            <div class="filter-chip">
+                <i class="fas fa-calendar"></i>
+                <select id="filterFecha" class="filter-select"><option value="">Fecha</option></select>
             </div>
-            <div class="chart-box">
-                <h3>Por Área</h3>
-                <canvas id="chartArea"></canvas>
+            <div class="filter-chip">
+                <i class="fas fa-clock"></i>
+                <select id="filterTurno" class="filter-select"><option value="">Turno</option></select>
             </div>
+            <div class="filter-chip">
+                <i class="fas fa-map-marker-alt"></i>
+                <select id="filterArea" class="filter-select"><option value="">Área</option></select>
+            </div>
+            <div class="filter-chip">
+                <i class="fas fa-warehouse"></i>
+                <select id="filterFundo" class="filter-select"><option value="">Fundo / Planta</option></select>
+            </div>
+            <div class="filter-chip">
+                <i class="fas fa-list-alt"></i>
+                <select id="filterTipo" class="filter-select"><option value="">Tipo</option></select>
+            </div>
+            <div class="filter-chip">
+                <i class="fas fa-exclamation-circle"></i>
+                <select id="filterIncidencia" class="filter-select"><option value="">Incidencia</option></select>
+            </div>
+            <div class="filter-chip">
+                <i class="fas fa-check-circle"></i>
+                <select id="filterEstado" class="filter-select"><option value="">Estado</option></select>
+            </div>
+            <button id="clearFilters" class="btn-clear-chips">
+                <i class="fas fa-eraser"></i> Limpiar
+            </button>
+        </section>
+
+        <!-- Gráficos -->
+        <section class="charts-exec">
+
+            <div class="chart-exec-card">
+                <div class="chart-exec-header">
+                    <i class="fas fa-chart-pie chart-icon"></i>
+                    <h3>Incidencias por Estado</h3>
+                </div>
+                <div class="chart-doughnut-wrapper">
+                    <canvas id="chartEstado"></canvas>
+                    <div class="chart-doughnut-center">
+                        <span class="center-value" id="centerTotal">0</span>
+                        <span class="center-label">TOTAL</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-exec-card">
+                <div class="chart-exec-header">
+                    <i class="fas fa-globe chart-icon"></i>
+                    <h3>Registros por Área</h3>
+                </div>
+                <canvas id="chartAreas"></canvas>
+            </div>
+
+            <div class="chart-exec-card">
+                <div class="chart-exec-header">
+                    <i class="fas fa-chart-column chart-icon"></i>
+                    <h3>Registros por Turno y Tipo</h3>
+                </div>
+                <canvas id="chartStacked"></canvas>
+            </div>
+
+            <div class="chart-exec-card">
+                <div class="chart-exec-header">
+                    <i class="fas fa-arrow-trend-up chart-icon"></i>
+                    <h3>Trayectoria Diaria</h3>
+                </div>
+                <canvas id="chartLineas"></canvas>
+            </div>
+
+            <div class="chart-exec-card">
+                <div class="chart-exec-header">
+                    <i class="fas fa-bag-shopping chart-icon"></i>
+                    <h3>Distribución por Turno</h3>
+                </div>
+                <div class="progress-list" id="progressTurnos"></div>
+            </div>
+
+            <div class="chart-exec-card">
+                <div class="chart-exec-header">
+                    <i class="fas fa-bell chart-icon"></i>
+                    <h3>Rondas vs Inspecciones</h3>
+                </div>
+                <canvas id="chartRondas"></canvas>
+            </div>
+
+            <div class="chart-exec-card chart-full">
+                <div class="chart-exec-header">
+                    <i class="fas fa-table chart-icon"></i>
+                    <h3>Comparación por Área</h3>
+                </div>
+                <div id="tablaResumen"></div>
+            </div>
+
         </section>
     </div>
 

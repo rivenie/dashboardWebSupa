@@ -3,25 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subir Excel - Dashboard</title>
+    <title>Subir Excel | Dashboard Ejecutivo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/index.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>Subir Excel</h1>
-        <p>Selecciona el archivo para actualizar el dashboard</p>
 
-        <input type="file" id="excelFile" accept=".xlsx, .xls">
-        
-        <div id="sheetSelector" style="display: none;">
-            <label>Pestaña:</label>
-            <select id="sheetSelect"></select>
-            <button id="btnSubir">Subir al Dashboard</button>
+    <div class="reader-section">
+        <div class="reader-container">
+            <div class="reader-header">
+                <div class="reader-logo">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <h1>Subir Excel</h1>
+                <p>Selecciona el archivo para actualizar el dashboard</p>
+            </div>
+
+            <div class="upload-card">
+                <div class="upload-icon-circle">
+                    <i class="fas fa-cloud-arrow-up"></i>
+                </div>
+                <h2>Selecciona tu archivo</h2>
+                <p>Formatos soportados: .xlsx, .xls</p>
+
+                <label for="excelFile" class="btn-accent">
+                    <i class="fas fa-folder-open"></i> Elegir archivo
+                </label>
+                <input type="file" id="excelFile" accept=".xlsx, .xls">
+
+                <div id="sheetSelector" class="sheet-selector" style="display: none;">
+                    <label for="sheetSelect">Pestaña:</label>
+                    <select id="sheetSelect"></select>
+                    <button id="btnSubir" class="btn-accent">
+                        <i class="fas fa-cloud-arrow-up"></i> Subir al Dashboard
+                    </button>
+                </div>
+
+                <div id="mensaje" class="mensaje"></div>
+            </div>
+
+            <div id="tableContainer" class="table-container"></div>
         </div>
-
-        <div id="mensaje"></div>
     </div>
 
     <script src="js/index.js"></script>
