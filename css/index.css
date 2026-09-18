@@ -1,0 +1,95 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #f4f4f4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+}
+
+h1 {
+    margin-bottom: 10px;
+    color: #1a1f36;
+}
+
+p {
+    color: #6b7280;
+    margin-bottom: 25px;
+    font-size: 0.9rem;
+}
+
+input[type="file"] {
+    padding: 10px;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    width: 100%;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+#sheetSelector {
+    margin-top: 20px;
+}
+
+#sheetSelector label {
+    display: block;
+    margin-bottom: 8px;
+    color: #1a1f36;
+    font-weight: 500;
+}
+
+#sheetSelect {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    width: 100%;
+    margin-bottom: 15px;
+    font-size: 0.95rem;
+}
+
+#btnSubir {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: 0.3s;
+}
+
+#btnSubir:hover {
+    background: #1d4ed8;
+}
+
+#mensaje {
+    margin-top: 20px;
+    font-size: 0.9rem;
+}
+
+#mensaje.ok {
+    color: #059669;
+}
+
+#mensaje.error {
+    color: #dc2626;
+}

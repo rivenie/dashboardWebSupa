@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subir Excel - Dashboard</title>
+    <link rel="stylesheet" href="css/index.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Subir Excel</h1>
+        <p>Selecciona el archivo para actualizar el dashboard</p>
+
+        <input type="file" id="excelFile" accept=".xlsx, .xls">
+        
+        <div id="sheetSelector" style="display: none;">
+            <label>Pestaña:</label>
+            <select id="sheetSelect"></select>
+            <button id="btnSubir">Subir al Dashboard</button>
+        </div>
+
+        <div id="mensaje"></div>
+    </div>
+
+    <script src="js/index.js"></script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Seguridad</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="loading" class="loading">Cargando dashboard...</div>
+
+    <div id="dashboard" class="dashboard" style="display: none;">
+        <header class="header">
+            <h1>Dashboard de Seguridad Patrimonial</h1>
+            <span id="sheetName"></span>
+        </header>
+
+        <section class="kpi-row">
+            <div class="kpi-card">
+                <span class="kpi-label">Total Registros</span>
+                <span class="kpi-value" id="kpiTotal">0</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Incidencias</span>
+                <span class="kpi-value" id="kpiIncidencias">0</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">Cerrados</span>
+                <span class="kpi-value" id="kpiCerrados">0</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-label">En Proceso</span>
+                <span class="kpi-value" id="kpiProceso">0</span>
+            </div>
+        </section>
+
+        <section class="charts">
+            <div class="chart-box">
+                <h3>Por Turno</h3>
+                <canvas id="chartTurno"></canvas>
+            </div>
+            <div class="chart-box">
+                <h3>Por Área</h3>
+                <canvas id="chartArea"></canvas>
+            </div>
+        </section>
+    </div>
+
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
