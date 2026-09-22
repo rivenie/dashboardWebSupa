@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Ejecutivo | Seguridad Patrimonial</title>
+    <title>Dashboard Equipos</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/dashboard.css">
@@ -19,15 +19,12 @@
 
     <div id="dashboard" class="dashboard-section" style="display: none;">
 
-        <!-- Header ejecutivo -->
         <header class="exec-header">
             <div class="exec-title">
-                <div class="exec-logo">
-                    <i class="fas fa-shield-halved"></i>
-                </div>
+                <div class="exec-logo"><i class="fas fa-tractor"></i></div>
                 <div>
-                    <h1>Dashboard Ejecutivo</h1>
-                    <span class="exec-subtitle" id="sheetName">Control Patrimonial</span>
+                    <h1>Dashboard de Equipos</h1>
+                    <span class="exec-subtitle" id="sheetName">Análisis de consumo y costos</span>
                 </div>
             </div>
             <div class="exec-actions">
@@ -41,67 +38,51 @@
         <!-- KPIs -->
         <section class="kpi-row">
             <div class="kpi-card">
-                <div class="kpi-icon-circle">
-                    <i class="fas fa-clipboard-list"></i>
-                </div>
+                <div class="kpi-icon-circle"><i class="fas fa-list"></i></div>
                 <div class="kpi-content">
-                    <span class="kpi-title">Total Registros</span>
-                    <span class="kpi-main" id="kpiTotal">0</span>
-                    <span class="kpi-trend trend-up">
-                        <i class="fas fa-arrow-up"></i> <span id="kpiTotalTrend">+0%</span>
-                    </span>
+                    <span class="kpi-title">Total Equipos</span>
+                    <span class="kpi-main" id="kpiEquipos">0</span>
+                    <span class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> Activos</span>
                 </div>
             </div>
-
             <div class="kpi-card">
-                <div class="kpi-icon-circle icon-red">
-                    <i class="fas fa-triangle-exclamation"></i>
-                </div>
+                <div class="kpi-icon-circle icon-cyan"><i class="fas fa-clock"></i></div>
                 <div class="kpi-content">
-                    <span class="kpi-title">Incidencias</span>
-                    <span class="kpi-main" id="kpiIncidencias">0</span>
-                    <span class="kpi-trend trend-down">
-                        <i class="fas fa-arrow-down"></i> <span id="kpiIncTrend">-0%</span>
-                    </span>
+                    <span class="kpi-title">Total Horas</span>
+                    <span class="kpi-main" id="kpiHoras">0</span>
+                    <span class="kpi-trend trend-up">Acumulado</span>
                 </div>
             </div>
-
             <div class="kpi-card">
-                <div class="kpi-icon-circle icon-green">
-                    <i class="fas fa-circle-check"></i>
-                </div>
+                <div class="kpi-icon-circle icon-red"><i class="fas fa-exclamation-triangle"></i></div>
                 <div class="kpi-content">
-                    <span class="kpi-title">Cerrados</span>
-                    <span class="kpi-main" id="kpiCerrados">0</span>
-                    <span class="kpi-trend trend-up">
-                        <i class="fas fa-arrow-up"></i> <span id="kpiCerradosTrend">+0%</span>
-                    </span>
+                    <span class="kpi-title">Exceso Ratio</span>
+                    <span class="kpi-main" id="kpiExceso">0</span>
+                    <span class="kpi-trend trend-down"><i class="fas fa-arrow-down"></i> Sobre esperado</span>
                 </div>
             </div>
-
             <div class="kpi-card">
-                <div class="kpi-icon-circle icon-orange">
-                    <i class="fas fa-spinner"></i>
-                </div>
+                <div class="kpi-icon-circle icon-orange"><i class="fas fa-coins"></i></div>
                 <div class="kpi-content">
-                    <span class="kpi-title">En Proceso</span>
-                    <span class="kpi-main" id="kpiProceso">0</span>
-                    <span class="kpi-trend trend-down">
-                        <i class="fas fa-arrow-down"></i> <span id="kpiProcTrend">-0%</span>
-                    </span>
+                    <span class="kpi-title">Pérdida Total</span>
+                    <span class="kpi-main" id="kpiPerdida">S/ 0</span>
+                    <span class="kpi-trend trend-down">S/ Por exceso</span>
                 </div>
             </div>
-
             <div class="kpi-card">
-                <div class="kpi-icon-circle icon-cyan">
-                    <i class="fas fa-bullseye"></i>
-                </div>
+                <div class="kpi-icon-circle icon-green"><i class="fas fa-warehouse"></i></div>
                 <div class="kpi-content">
-                    <span class="kpi-title">Eficiencia</span>
-                    <span class="kpi-main" id="kpiEficiencia">0%</span>
-                    <span class="kpi-trend trend-up">
-                        <i class="fas fa-arrow-up"></i> <span id="kpiEfTrend">+0%</span>
-                    </span>
+                    <span class="kpi-title">INSTTALE</span>
+                    <span class="kpi-main" id="kpiPropias">0</span>
+                    <span class="kpi-trend trend-up">Propias</span>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon-circle icon-orange"><i class="fas fa-key"></i></div>
+                <div class="kpi-content">
+                    <span class="kpi-title">ALQUILADA</span>
+                    <span class="kpi-main" id="kpiAlquiladas">0</span>
+                    <span class="kpi-trend trend-down">Terceros</span>
                 </div>
             </div>
         </section>
@@ -109,32 +90,16 @@
         <!-- Filtros -->
         <section class="filters-row">
             <div class="filter-chip">
-                <i class="fas fa-calendar"></i>
-                <select id="filterFecha" class="filter-select"><option value="">Fecha</option></select>
+                <i class="fas fa-tractor"></i>
+                <select id="filterEquipo" class="filter-select"><option value="">Tipo Equipo</option></select>
             </div>
             <div class="filter-chip">
-                <i class="fas fa-clock"></i>
-                <select id="filterTurno" class="filter-select"><option value="">Turno</option></select>
+                <i class="fas fa-user-tie"></i>
+                <select id="filterPropietario" class="filter-select"><option value="">Propietario</option></select>
             </div>
             <div class="filter-chip">
-                <i class="fas fa-map-marker-alt"></i>
-                <select id="filterArea" class="filter-select"><option value="">Área</option></select>
-            </div>
-            <div class="filter-chip">
-                <i class="fas fa-warehouse"></i>
-                <select id="filterFundo" class="filter-select"><option value="">Fundo / Planta</option></select>
-            </div>
-            <div class="filter-chip">
-                <i class="fas fa-list-alt"></i>
-                <select id="filterTipo" class="filter-select"><option value="">Tipo</option></select>
-            </div>
-            <div class="filter-chip">
-                <i class="fas fa-exclamation-circle"></i>
-                <select id="filterIncidencia" class="filter-select"><option value="">Incidencia</option></select>
-            </div>
-            <div class="filter-chip">
-                <i class="fas fa-check-circle"></i>
-                <select id="filterEstado" class="filter-select"><option value="">Estado</option></select>
+                <i class="fas fa-barcode"></i>
+                <select id="filterCodigo" class="filter-select"><option value="">Código</option></select>
             </div>
             <button id="clearFilters" class="btn-clear-chips">
                 <i class="fas fa-eraser"></i> Limpiar
@@ -144,64 +109,107 @@
         <!-- Gráficos -->
         <section class="charts-exec">
 
+            <!-- 1. Real vs Esperado por equipo (barras agrupadas) -->
+            <div class="chart-exec-card chart-full">
+                <div class="chart-exec-header">
+                    <i class="fas fa-chart-column chart-icon"></i>
+                    <h3>Consumo Real vs Esperado por Equipo</h3>
+                </div>
+                <canvas id="chartRealEsperado"></canvas>
+            </div>
+
+            <!-- 2. Top 10 equipos con mayor pérdida -->
+            <div class="chart-exec-card">
+                <div class="chart-exec-header">
+                    <i class="fas fa-ranking-star chart-icon"></i>
+                    <h3>Top 10 Equipos con Mayor Pérdida</h3>
+                </div>
+                <canvas id="chartTopPerdida"></canvas>
+            </div>
+
+            <!-- 3. Pérdida por tipo de equipo -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
                     <i class="fas fa-chart-pie chart-icon"></i>
-                    <h3>Incidencias por Estado</h3>
+                    <h3>Pérdida por Tipo de Equipo</h3>
+                </div>
+                <canvas id="chartPerdidaTipo"></canvas>
+            </div>
+
+            <!-- 4. Propios vs Alquilados (anillo) -->
+            <div class="chart-exec-card">
+                <div class="chart-exec-header">
+                    <i class="fas fa-circle-nodes chart-icon"></i>
+                    <h3>Propias vs Alquiladas</h3>
                 </div>
                 <div class="chart-doughnut-wrapper">
-                    <canvas id="chartEstado"></canvas>
+                    <canvas id="chartPropiosAlq"></canvas>
                     <div class="chart-doughnut-center">
                         <span class="center-value" id="centerTotal">0</span>
-                        <span class="center-label">TOTAL</span>
+                        <span class="center-label">EQUIPOS</span>
                     </div>
                 </div>
             </div>
 
+            <!-- 5. Costo total por tipo -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-globe chart-icon"></i>
-                    <h3>Registros por Área</h3>
+                    <i class="fas fa-coins chart-icon"></i>
+                    <h3>Costo Total por Tipo de Equipo</h3>
                 </div>
-                <canvas id="chartAreas"></canvas>
+                <canvas id="chartCostoTipo"></canvas>
             </div>
 
-            <div class="chart-exec-card">
-                <div class="chart-exec-header">
-                    <i class="fas fa-chart-column chart-icon"></i>
-                    <h3>Registros por Turno y Tipo</h3>
-                </div>
-                <canvas id="chartStacked"></canvas>
-            </div>
-
+            <!-- 6. Diferencia ratio por equipo -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
                     <i class="fas fa-arrow-trend-up chart-icon"></i>
-                    <h3>Trayectoria Diaria</h3>
+                    <h3>Diferencia de Ratio por Equipo</h3>
                 </div>
-                <canvas id="chartLineas"></canvas>
+                <canvas id="chartDiferencia"></canvas>
             </div>
 
+            <!-- 7. Distribución de equipos por propietario -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-bag-shopping chart-icon"></i>
-                    <h3>Distribución por Turno</h3>
+                    <i class="fas fa-user-tie chart-icon"></i>
+                    <h3>Distribución por Propietario</h3>
                 </div>
-                <div class="progress-list" id="progressTurnos"></div>
+                <canvas id="chartPropietario"></canvas>
             </div>
 
+            <!-- 8. Progreso de exceso por equipo -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-bell chart-icon"></i>
-                    <h3>Rondas vs Inspecciones</h3>
+                    <i class="fas fa-gauge-high chart-icon"></i>
+                    <h3>Exceso de Consumo por Equipo</h3>
                 </div>
-                <canvas id="chartRondas"></canvas>
+                <div class="progress-list" id="progressExceso"></div>
             </div>
 
+            <!-- 9. Pérdida promedio por tipo -->
+            <div class="chart-exec-card">
+                <div class="chart-exec-header">
+                    <i class="fas fa-scale-balanced chart-icon"></i>
+                    <h3>Pérdida Promedio por Equipo (por tipo)</h3>
+                </div>
+                <canvas id="chartPerdidaPromedio"></canvas>
+            </div>
+
+            <!-- 10. Eficiencia operativa -->
+            <div class="chart-exec-card">
+                <div class="chart-exec-header">
+                    <i class="fas fa-bullseye chart-icon"></i>
+                    <h3>Eficiencia Operativa (% real / esperado)</h3>
+                </div>
+                <canvas id="chartEficiencia"></canvas>
+            </div>
+
+            <!-- Tabla resumen -->
             <div class="chart-exec-card chart-full">
                 <div class="chart-exec-header">
                     <i class="fas fa-table chart-icon"></i>
-                    <h3>Comparación por Área</h3>
+                    <h3>Detalle por Equipo</h3>
                 </div>
                 <div id="tablaResumen"></div>
             </div>

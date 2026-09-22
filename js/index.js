@@ -13,6 +13,7 @@ const sheetSelector = document.getElementById('sheetSelector');
 const sheetSelect = document.getElementById('sheetSelect');
 const btnSubir = document.getElementById('btnSubir');
 const mensaje = document.getElementById('mensaje');
+const tableContainer = document.getElementById('tableContainer');
 
 // ============ LECTURA EXCEL ============
 fileInput.addEventListener('change', function (e) {
@@ -33,7 +34,7 @@ fileInput.addEventListener('change', function (e) {
             sheetSelect.appendChild(opt);
         });
 
-        sheetSelector.style.display = 'block';
+        sheetSelector.style.display = 'flex';
         procesarPestaña(workbook.SheetNames[0]);
     };
     reader.readAsArrayBuffer(file);
@@ -52,11 +53,23 @@ function procesarPestaña(nombre) {
     const headers = rows[0];
     dataGlobal = rows.slice(1).map(row => {
         const obj = {};
-        headers.forEach((h, i) => {
-            obj[h] = row[i];
-        });
+        headers.forEach((h, i) => { obj[h] = row[i]; });
         return obj;
     });
+
+    // Renderizar tabla previa
+    let html = '<table><thead><tr>';
+    headers.forEach(h => html += `<th>${h || ''}</th>`);
+    html += '</tr></thead><tbody>';
+    for (let i = 1; i < rows.length; i++) {
+        html += '<tr>';
+        headers.forEach((_, idx) => {
+            html += `<td>${rows[i][idx] !== undefined ? rows[i][idx] : ''}</td>`;
+        });
+        html += '</tr>';
+    }
+    html += '</tbody></table>';
+    tableContainer.innerHTML = html;
 }
 
 // ============ SUBIR A SUPABASE ============
@@ -68,21 +81,15 @@ btnSubir.addEventListener('click', async function () {
 
     btnSubir.disabled = true;
     btnSubir.textContent = 'Subiendo...';
-    mostrarMensaje('Subiendo datos, por favor espera...', '');
+    mostrarMensaje('Subiendo datos, por favor espera...', 'loading');
 
     try {
-        // 1. Eliminar los datos anteriores
-        await supabaseClient
-            .from('dashboard_data')
-            .delete()
-            .neq('id', 0);
+        await supabaseClient.from('dashboard_data').delete().neq('id', 0);
 
-        // 2. Insertar los nuevos datos
-        const sheetName = sheetSelect.value;
         const { error } = await supabaseClient
             .from('dashboard_data')
             .insert([{
-                sheet_name: sheetName,
+                sheet_name: sheetSelect.value,
                 data: dataGlobal
             }]);
 
@@ -100,5 +107,5 @@ btnSubir.addEventListener('click', async function () {
 
 function mostrarMensaje(texto, tipo) {
     mensaje.textContent = texto;
-    mensaje.className = tipo;
+    mensaje.className = 'mensaje ' + tipo;
 }
