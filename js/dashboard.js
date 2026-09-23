@@ -23,7 +23,6 @@ document.getElementById('fechaActual').textContent = new Date().toLocaleDateStri
     day: '2-digit', month: 'short', year: 'numeric'
 });
 
-// ============ CARGA SUPABASE ============
 async function cargarDatos() {
     try {
         const { data, error } = await supabaseClient
@@ -71,43 +70,53 @@ function norm(v) {
 function num(v) {
     if (typeof v === 'number') return v;
     if (!v) return 0;
-    return parseFloat(v.toString().replace(/,/g, '')) || 0;
+    return parseFloat(v.toString().replace(/[^0-9.-]/g, '')) || 0;
 }
 
 function money(v) {
+    return '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function moneySoles(v) {
     return 'S/ ' + v.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fechaCorta(f) {
+    if (!f) return '';
+    const partes = f.split('/');
+    if (partes.length === 3) return partes[0] + '/' + partes[1];
+    return f;
 }
 
 // ============ KPIs ============
 function calcularKPIs() {
-    const cCodigo = col('CODIGO');
-    const cReal = col('REAL');
-    const cEsperado = col('ESPERADO');
-    const cHoras = col('TOTAL HRS');
-    const cDif = col('DIFERENCIA RATIO');
-    const cTotal = col('TOTAL S/.');
-    const cProp = col('PROPIETARIO');
+    const cDespacho = col('CANTIDAD DE DESPACHOS') || col('CANT_DESPACHOS');
+    const cVolumen = col('VOLUMEN M3');
+    const cUSD = col('VALOR DE_VENTA_$');
+    const cSoles = col('VALOR DE_VENTA_S/.') || col('VALOR DE VENTA_S/.');
+    const cPais = col('COUNTRY');
+    const cPedido = col('PEDIDO');
 
-    const totalEquipos = dataGlobal.length;
-    let totalHoras = 0, excesoTotal = 0, perdidaTotal = 0, propias = 0, alquiladas = 0;
+    let despachos = 0, volumen = 0, usd = 0, soles = 0;
+    const paises = new Set();
 
     dataGlobal.forEach(f => {
-        totalHoras += num(f[cHoras]);
-        excesoTotal += num(f[cDif]);
-        perdidaTotal += num(f[cTotal]);
-
-        const p = norm(f[cProp]).toUpperCase();
-        if (p.includes('INSTTALE')) propias++;
-        else if (p.includes('ALQUILADA')) alquiladas++;
+        despachos += num(f[cDespacho]);
+        volumen += num(f[cVolumen]);
+        usd += num(f[cUSD]);
+        soles += num(f[cSoles]);
+        if (f[cPais]) paises.add(norm(f[cPais]));
     });
 
-    animar('kpiEquipos', totalEquipos);
-    document.getElementById('kpiHoras').textContent = totalHoras.toFixed(1);
-    document.getElementById('kpiExceso').textContent = excesoTotal.toFixed(2);
-    document.getElementById('kpiPerdida').textContent = money(perdidaTotal);
-    animar('kpiPropias', propias);
-    animar('kpiAlquiladas', alquiladas);
-    document.getElementById('centerTotal').textContent = totalEquipos;
+    const ticket = dataGlobal.length > 0 ? usd / dataGlobal.length : 0;
+
+    animar('kpiDespachos', despachos);
+    document.getElementById('kpiVolumen').textContent = volumen.toLocaleString('en-US', { maximumFractionDigits: 1 });
+    document.getElementById('kpiUSD').textContent = money(usd);
+    document.getElementById('kpiSoles').textContent = moneySoles(soles);
+    document.getElementById('kpiTicket').textContent = money(ticket);
+    animar('kpiPaises', paises.size);
+    document.getElementById('centerTotal').textContent = despachos;
 }
 
 function animar(id, valor) {
@@ -125,9 +134,12 @@ function animar(id, valor) {
 
 // ============ FILTROS ============
 function cargarFiltros() {
-    llenar('filterEquipo', 'EQUIPO');
-    llenar('filterPropietario', 'PROPIETARIO');
-    llenar('filterCodigo', 'CODIGO');
+    llenar('filterPais', 'COUNTRY');
+    llenar('filterMes', 'MES');
+    llenar('filterSemana', 'SEMANA');
+    llenar('filterTransporte', 'TRANSPORTE');
+    llenar('filterIncoterm', 'INCOTERMS');
+    llenar('filterUnidad', 'TIPO DE UNIDAD');
 }
 
 function llenar(id, columna) {
@@ -147,16 +159,27 @@ function llenar(id, columna) {
 }
 
 function aplicarFiltros() {
-    const eq = document.getElementById('filterEquipo').value;
-    const pr = document.getElementById('filterPropietario').value;
-    const co = document.getElementById('filterCodigo').value;
+    const pais = document.getElementById('filterPais').value;
+    const mes = document.getElementById('filterMes').value;
+    const semana = document.getElementById('filterSemana').value;
+    const transporte = document.getElementById('filterTransporte').value;
+    const incoterm = document.getElementById('filterIncoterm').value;
+    const unidad = document.getElementById('filterUnidad').value;
 
-    const cEq = col('EQUIPO'), cPr = col('PROPIETARIO'), cCo = col('CODIGO');
+    const cPais = col('COUNTRY');
+    const cMes = col('MES');
+    const cSemana = col('SEMANA');
+    const cTrans = col('TRANSPORTE');
+    const cInc = col('INCOTERMS');
+    const cUni = col('TIPO DE UNIDAD');
 
     const filt = dataGlobal.filter(f => {
-        if (eq && norm(f[cEq]) !== eq) return false;
-        if (pr && norm(f[cPr]) !== pr) return false;
-        if (co && norm(f[cCo]) !== co) return false;
+        if (pais && norm(f[cPais]) !== pais) return false;
+        if (mes && norm(f[cMes]) !== mes) return false;
+        if (semana && norm(f[cSemana]) !== semana) return false;
+        if (transporte && norm(f[cTrans]) !== transporte) return false;
+        if (incoterm && norm(f[cInc]) !== incoterm) return false;
+        if (unidad && norm(f[cUni]) !== unidad) return false;
         return true;
     });
 
@@ -170,86 +193,101 @@ function aplicarFiltros() {
 
 // ============ GRÁFICOS ============
 function crearGraficos() {
-    const cCodigo = col('CODIGO');
-    const cEquipo = col('EQUIPO');
-    const cReal = col('REAL');
-    const cEsperado = col('ESPERADO');
-    const cDif = col('DIFERENCIA RATIO');
-    const cTotal = col('TOTAL S/.');
-    const cProp = col('PROPIETARIO');
+    const cFecha = col('FECHA_TRANSACCION');
+    const cPais = col('COUNTRY');
+    const cMes = col('MES');
+    const cSemana = col('SEMANA');
+    const cTrans = col('TRANSPORTE');
+    const cInc = col('INCOTERMS');
+    const cUni = col('TIPO DE UNIDAD');
+    const cCliente = col('NOMBRE_CLIENTE');
+    const cUSD = col('VALOR DE_VENTA_$');
+    const cVolumen = col('VOLUMEN M3');
+    const cDespacho = col('CANTIDAD DE DESPACHOS') || col('CANT_DESPACHOS');
 
-    // 1. Real vs Esperado (barras agrupadas)
-    const top15 = [...dataGlobal].slice(0, 15);
-    renderGrouped('chartRealEsperado',
-        top15.map(f => norm(f[cCodigo])),
-        top15.map(f => num(f[cReal])),
-        top15.map(f => num(f[cEsperado]))
-    );
-
-    // 2. Top 10 mayor pérdida
-    const top10 = [...dataGlobal].sort((a, b) => num(b[cTotal]) - num(a[cTotal])).slice(0, 10);
-    renderHBar('chartTopPerdida', top10.map(f => norm(f[cCodigo])), top10.map(f => num(f[cTotal])));
-
-    // 3. Pérdida por tipo de equipo
-    const porTipo = {};
+    // 1. Evolución diaria
+    const porDia = {};
     dataGlobal.forEach(f => {
-        const t = norm(f[cEquipo]) || 'Sin tipo';
-        porTipo[t] = (porTipo[t] || 0) + num(f[cTotal]);
+        const fecha = fechaCorta(norm(f[cFecha]));
+        if (!fecha) return;
+        porDia[fecha] = (porDia[fecha] || 0) + num(f[cUSD]);
     });
-    renderDoughnut('chartPerdidaTipo', Object.keys(porTipo), Object.values(porTipo));
+    renderLine('chartEvolucion', Object.keys(porDia), Object.values(porDia));
 
-    // 4. Propias vs Alquiladas
-    let propias = 0, alquiladas = 0;
+    // 2. Ventas por País
+    const porPais = {};
     dataGlobal.forEach(f => {
-        const p = norm(f[cProp]).toUpperCase();
-        if (p.includes('INSTTALE')) propias++;
-        else if (p.includes('ALQUILADA')) alquiladas++;
+        const p = norm(f[cPais]) || 'Sin país';
+        porPais[p] = (porPais[p] || 0) + num(f[cUSD]);
     });
-    renderDoughnut('chartPropiosAlq', ['INSTTALE', 'ALQUILADA'], [propias, alquiladas]);
+    const paisesOrdenados = Object.entries(porPais).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    renderHBar('chartPais', paisesOrdenados.map(p => p[0]), paisesOrdenados.map(p => p[1]), COLORS.accent);
 
-    // 5. Costo total por tipo
-    const costoPorTipo = {};
+    // 3. Ventas por Mes
+    const porMes = {};
     dataGlobal.forEach(f => {
-        const t = norm(f[cEquipo]) || 'Sin tipo';
-        costoPorTipo[t] = (costoPorTipo[t] || 0) + num(f[cTotal]);
+        const m = norm(f[cMes]) || 'Sin mes';
+        porMes[m] = (porMes[m] || 0) + num(f[cUSD]);
     });
-    renderBar('chartCostoTipo', Object.keys(costoPorTipo), Object.values(costoPorTipo), COLORS.accent);
+    renderBar('chartMes', Object.keys(porMes), Object.values(porMes), COLORS.green);
 
-    // 6. Diferencia ratio por equipo
-    const topDif = [...dataGlobal].sort((a, b) => num(b[cDif]) - num(a[cDif])).slice(0, 15);
-    renderBar('chartDiferencia', topDif.map(f => norm(f[cCodigo])), topDif.map(f => num(f[cDif])), COLORS.red);
-
-    // 7. Distribución por propietario
-    const porProp = {};
+    // 4. Incoterms
+    const porInc = {};
     dataGlobal.forEach(f => {
-        const p = norm(f[cProp]) || 'Sin propietario';
-        porProp[p] = (porProp[p] || 0) + 1;
+        const i = norm(f[cInc]) || 'Sin incoterm';
+        porInc[i] = (porInc[i] || 0) + num(f[cDespacho]);
     });
-    renderDoughnut('chartPropietario', Object.keys(porProp), Object.values(porProp));
+    renderDoughnut('chartIncoterm', Object.keys(porInc), Object.values(porInc));
 
-    // 8. Progreso de exceso por equipo (barra de progreso)
-    const excesoOrdenado = [...dataGlobal]
-        .filter(f => num(f[cDif]) > 0)
-        .sort((a, b) => num(b[cDif]) - num(a[cDif]))
-        .slice(0, 10);
+    // 5. Tipo Unidad
+    const porUni = {};
+    dataGlobal.forEach(f => {
+        const u = norm(f[cUni]) || 'Sin tipo';
+        porUni[u] = (porUni[u] || 0) + num(f[cDespacho]);
+    });
+    renderDoughnut('chartUnidad', Object.keys(porUni), Object.values(porUni));
 
-    const maxExceso = Math.max(...excesoOrdenado.map(f => num(f[cDif])), 1);
-    const cont = document.getElementById('progressExceso');
+    // 6. Transportes
+    const porTrans = {};
+    dataGlobal.forEach(f => {
+        const t = norm(f[cTrans]) || 'Sin transporte';
+        porTrans[t] = (porTrans[t] || 0) + num(f[cDespacho]);
+    });
+    renderBar('chartTransporte', Object.keys(porTrans), Object.values(porTrans), COLORS.cyan);
+
+    // 7. Top 10 clientes
+    const porCliente = {};
+    dataGlobal.forEach(f => {
+        const cl = norm(f[cCliente]) || 'Sin cliente';
+        porCliente[cl] = (porCliente[cl] || 0) + num(f[cUSD]);
+    });
+    const topClientes = Object.entries(porCliente).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    renderHBar('chartTopClientes', topClientes.map(c => c[0].substring(0, 25)), topClientes.map(c => c[1]), COLORS.purple);
+
+    // 8. Volumen por país
+    const volPorPais = {};
+    dataGlobal.forEach(f => {
+        const p = norm(f[cPais]) || 'Sin país';
+        volPorPais[p] = (volPorPais[p] || 0) + num(f[cVolumen]);
+    });
+    const volOrdenado = Object.entries(volPorPais).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    renderHBar('chartVolumenPais', volOrdenado.map(v => v[0]), volOrdenado.map(v => v[1]), COLORS.cyan);
+
+    // 9. Progreso por país (participación)
+    const totalUSD = Object.values(porPais).reduce((a, b) => a + b, 0);
+    const cont = document.getElementById('progressPaises');
     if (cont) {
         cont.innerHTML = '';
-        excesoOrdenado.forEach(f => {
-            const codigo = norm(f[cCodigo]);
-            const exceso = num(f[cDif]);
-            const percent = ((exceso / maxExceso) * 100).toFixed(1);
-
+        paisesOrdenados.slice(0, 8).forEach(([pais, monto]) => {
+            const percent = totalUSD > 0 ? ((monto / totalUSD) * 100).toFixed(1) : 0;
             const item = document.createElement('div');
             item.className = 'progress-item';
             item.innerHTML = `
                 <div class="progress-header">
-                    <span class="progress-label"><i class="fas fa-tractor"></i> ${codigo}</span>
+                    <span class="progress-label"><i class="fas fa-globe"></i> ${pais}</span>
                     <span class="progress-values">
-                        <span class="progress-percent">+${exceso.toFixed(2)}</span>
-                        <span class="progress-count">ratio</span>
+                        <span class="progress-percent">${percent}%</span>
+                        <span class="progress-count">${money(monto)}</span>
                     </span>
                 </div>
                 <div class="progress-bar-bg">
@@ -260,57 +298,58 @@ function crearGraficos() {
         });
     }
 
-    // 9. Pérdida promedio por tipo
-    const sumaPorTipo = {};
-    const cuentaPorTipo = {};
+    // 10. Despachos por semana
+    const porSem = {};
     dataGlobal.forEach(f => {
-        const t = norm(f[cEquipo]) || 'Sin tipo';
-        sumaPorTipo[t] = (sumaPorTipo[t] || 0) + num(f[cTotal]);
-        cuentaPorTipo[t] = (cuentaPorTipo[t] || 0) + 1;
+        const s = norm(f[cSemana]) || 'Sin semana';
+        porSem[s] = (porSem[s] || 0) + num(f[cDespacho]);
     });
-    const promedioPorTipo = {};
-    Object.keys(sumaPorTipo).forEach(t => {
-        promedioPorTipo[t] = sumaPorTipo[t] / cuentaPorTipo[t];
-    });
-    renderBar('chartPerdidaPromedio', Object.keys(promedioPorTipo), Object.values(promedioPorTipo), COLORS.purple);
-
-    // 10. Eficiencia operativa (real / esperado * 100)
-    const topEff = dataGlobal.slice(0, 15).map(f => {
-        const real = num(f[cReal]);
-        const esperado = num(f[cEsperado]);
-        return {
-            codigo: norm(f[cCodigo]),
-            eff: esperado > 0 ? (real / esperado) * 100 : 0
-        };
-    });
-    renderBar('chartEficiencia', topEff.map(e => e.codigo), topEff.map(e => e.eff.toFixed(1)), COLORS.green);
+    const semanasOrdenadas = Object.keys(porSem).sort();
+    renderBar('chartSemana', semanasOrdenadas, semanasOrdenadas.map(s => porSem[s]), COLORS.accent);
 }
 
 // ============ RENDERIZADORES ============
-function renderGrouped(id, labels, d1, d2) {
+function renderLine(id, labels, data) {
     const ctx = document.getElementById(id);
     if (!ctx) return;
     if (charts[id]) charts[id].destroy();
 
+    const maxValue = Math.max(...data);
+    const maxIndex = data.indexOf(maxValue);
+
     charts[id] = new Chart(ctx, {
-        type: 'bar',
+        type: 'line',
         data: {
             labels: labels,
-            datasets: [
-                { label: 'Real', data: d1, backgroundColor: COLORS.accent, borderRadius: 4, barThickness: 12 },
-                { label: 'Esperado', data: d2, backgroundColor: COLORS.cyan, borderRadius: 4, barThickness: 12 }
-            ]
+            datasets: [{
+                label: 'Ventas USD',
+                data: data,
+                borderColor: COLORS.cyan,
+                backgroundColor: 'rgba(0, 210, 255, 0.1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: COLORS.cyan,
+                pointBorderColor: '#1E293B',
+                pointBorderWidth: 2,
+                pointRadius: 4
+            }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { labels: { color: COLORS.textDim, font: { family: 'Inter', size: 11 } } },
-                tooltip: tooltipStyle()
+                legend: { display: false },
+                tooltip: {
+                    ...tooltipStyle(),
+                    callbacks: {
+                        afterBody: (c) => c[0].dataIndex === maxIndex ? '▲ MÁXIMO DEL PERIODO' : ''
+                    }
+                }
             },
             scales: {
                 x: { ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { display: false } },
-                y: { ticks: { color: COLORS.textDim }, grid: { color: 'rgba(148,163,184,0.1)' } }
+                y: { beginAtZero: true, ticks: { color: COLORS.textDim }, grid: { color: 'rgba(148,163,184,0.1)' } }
             }
         }
     });
@@ -330,7 +369,7 @@ function renderBar(id, labels, data, color) {
                 backgroundColor: color,
                 borderRadius: 6,
                 borderSkipped: false,
-                barThickness: 18
+                barThickness: 24
             }]
         },
         options: {
@@ -345,7 +384,7 @@ function renderBar(id, labels, data, color) {
     });
 }
 
-function renderHBar(id, labels, data) {
+function renderHBar(id, labels, data, color) {
     const ctx = document.getElementById(id);
     if (!ctx) return;
     if (charts[id]) charts[id].destroy();
@@ -356,7 +395,7 @@ function renderHBar(id, labels, data) {
             labels: labels,
             datasets: [{
                 data: data,
-                backgroundColor: COLORS.accent,
+                backgroundColor: color,
                 borderRadius: 6,
                 borderSkipped: false,
                 barThickness: 16
@@ -369,7 +408,7 @@ function renderHBar(id, labels, data) {
             plugins: { legend: { display: false }, tooltip: tooltipStyle() },
             scales: {
                 x: { ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { color: 'rgba(148,163,184,0.1)' } },
-                y: { ticks: { color: '#fff', font: { family: 'Inter', size: 11, weight: '500' } }, grid: { display: false } }
+                y: { ticks: { color: '#fff', font: { family: 'Inter', size: 10 } }, grid: { display: false } }
             }
         }
     });
@@ -420,47 +459,47 @@ function tooltipStyle() {
 
 // ============ TABLA RESUMEN ============
 function crearTablaResumen() {
-    const cCodigo = col('CODIGO');
-    const cEquipo = col('EQUIPO');
-    const cReal = col('REAL');
-    const cEsperado = col('ESPERADO');
-    const cDif = col('DIFERENCIA RATIO');
-    const cTotal = col('TOTAL S/.');
-    const cProp = col('PROPIETARIO');
+    const cFecha = col('FECHA_TRANSACCION');
+    const cPedido = col('PEDIDO');
+    const cCliente = col('NOMBRE_CLIENTE');
+    const cPais = col('COUNTRY');
+    const cVolumen = col('VOLUMEN M3');
+    const cUSD = col('VALOR DE_VENTA_$');
+    const cSoles = col('VALOR DE_VENTA_S/.') || col('VALOR DE VENTA_S/.');
+    const cInc = col('INCOTERMS');
 
     let html = '<table><thead><tr>';
-    html += '<th>Código</th><th>Equipo</th><th>Real</th><th>Esperado</th><th>Diferencia</th><th>Pérdida S/.</th><th>Propietario</th>';
+    html += '<th>Fecha</th><th>Pedido</th><th>Cliente</th><th>País</th><th>Vol m³</th><th>USD</th><th>Soles</th><th>Incoterm</th>';
     html += '</tr></thead><tbody>';
 
-    let totReal = 0, totEsp = 0, totDif = 0, totTotal = 0;
+    let totVol = 0, totUSD = 0, totSoles = 0;
 
-    const ordenado = [...dataGlobal].sort((a, b) => num(b[cTotal]) - num(a[cTotal]));
+    dataGlobal.forEach(f => {
+        const vol = num(f[cVolumen]);
+        const usd = num(f[cUSD]);
+        const sol = num(f[cSoles]);
 
-    ordenado.forEach(f => {
-        const real = num(f[cReal]);
-        const esp = num(f[cEsperado]);
-        const dif = num(f[cDif]);
-        const total = num(f[cTotal]);
-
-        totReal += real; totEsp += esp; totDif += dif; totTotal += total;
+        totVol += vol;
+        totUSD += usd;
+        totSoles += sol;
 
         html += `<tr>
-            <td>${norm(f[cCodigo])}</td>
-            <td>${norm(f[cEquipo])}</td>
-            <td>${real.toFixed(2)}</td>
-            <td>${esp.toFixed(2)}</td>
-            <td class="${dif > 0 ? 'value-down' : ''}">${dif.toFixed(2)}</td>
-            <td class="${total > 0 ? 'value-down' : ''}">${money(total)}</td>
-            <td>${norm(f[cProp])}</td>
+            <td>${norm(f[cFecha])}</td>
+            <td>${norm(f[cPedido])}</td>
+            <td>${norm(f[cCliente])}</td>
+            <td>${norm(f[cPais])}</td>
+            <td>${vol}</td>
+            <td>${money(usd)}</td>
+            <td>${moneySoles(sol)}</td>
+            <td>${norm(f[cInc])}</td>
         </tr>`;
     });
 
     html += `<tr class="table-total-row">
-        <td>TOTAL</td><td></td>
-        <td>${totReal.toFixed(2)}</td>
-        <td>${totEsp.toFixed(2)}</td>
-        <td>${totDif.toFixed(2)}</td>
-        <td>${money(totTotal)}</td>
+        <td colspan="4">TOTAL</td>
+        <td>${totVol.toLocaleString('en-US', { maximumFractionDigits: 1 })}</td>
+        <td>${money(totUSD)}</td>
+        <td>${moneySoles(totSoles)}</td>
         <td></td>
     </tr>`;
 

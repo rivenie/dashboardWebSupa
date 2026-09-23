@@ -1,13 +1,10 @@
-// ============ CONFIGURACIÓN SUPABASE ============
 const SUPABASE_URL = "https://uoftarfxakkpevugdycg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_vT_w6EoVLl-BK12ojRTaOg_UeSXAVvh";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ============ VARIABLES ============
 let workbookData = null;
 let dataGlobal = [];
 
-// ============ DOM ============
 const fileInput = document.getElementById('excelFile');
 const sheetSelector = document.getElementById('sheetSelector');
 const sheetSelect = document.getElementById('sheetSelect');
@@ -15,7 +12,6 @@ const btnSubir = document.getElementById('btnSubir');
 const mensaje = document.getElementById('mensaje');
 const tableContainer = document.getElementById('tableContainer');
 
-// ============ LECTURA EXCEL ============
 fileInput.addEventListener('change', function (e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -57,7 +53,6 @@ function procesarPestaña(nombre) {
         return obj;
     });
 
-    // Renderizar tabla previa
     let html = '<table><thead><tr>';
     headers.forEach(h => html += `<th>${h || ''}</th>`);
     html += '</tr></thead><tbody>';
@@ -72,7 +67,6 @@ function procesarPestaña(nombre) {
     tableContainer.innerHTML = html;
 }
 
-// ============ SUBIR A SUPABASE ============
 btnSubir.addEventListener('click', async function () {
     if (!dataGlobal || dataGlobal.length === 0) {
         mostrarMensaje('Primero selecciona un archivo Excel válido.', 'error');

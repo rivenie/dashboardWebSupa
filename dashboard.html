@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Equipos</title>
+    <title>Dashboard Exportaciones</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/dashboard.css">
@@ -21,10 +21,10 @@
 
         <header class="exec-header">
             <div class="exec-title">
-                <div class="exec-logo"><i class="fas fa-tractor"></i></div>
+                <div class="exec-logo"><i class="fas fa-ship"></i></div>
                 <div>
-                    <h1>Dashboard de Equipos</h1>
-                    <span class="exec-subtitle" id="sheetName">Análisis de consumo y costos</span>
+                    <h1>Dashboard de Exportaciones</h1>
+                    <span class="exec-subtitle" id="sheetName">Análisis de ventas y despachos</span>
                 </div>
             </div>
             <div class="exec-actions">
@@ -38,51 +38,51 @@
         <!-- KPIs -->
         <section class="kpi-row">
             <div class="kpi-card">
-                <div class="kpi-icon-circle"><i class="fas fa-list"></i></div>
+                <div class="kpi-icon-circle"><i class="fas fa-boxes-stacked"></i></div>
                 <div class="kpi-content">
-                    <span class="kpi-title">Total Equipos</span>
-                    <span class="kpi-main" id="kpiEquipos">0</span>
-                    <span class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> Activos</span>
+                    <span class="kpi-title">Total Despachos</span>
+                    <span class="kpi-main" id="kpiDespachos">0</span>
+                    <span class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> Acumulado</span>
                 </div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-icon-circle icon-cyan"><i class="fas fa-clock"></i></div>
+                <div class="kpi-icon-circle icon-cyan"><i class="fas fa-cube"></i></div>
                 <div class="kpi-content">
-                    <span class="kpi-title">Total Horas</span>
-                    <span class="kpi-main" id="kpiHoras">0</span>
-                    <span class="kpi-trend trend-up">Acumulado</span>
+                    <span class="kpi-title">Volumen m³</span>
+                    <span class="kpi-main" id="kpiVolumen">0</span>
+                    <span class="kpi-trend trend-up">Total</span>
                 </div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-icon-circle icon-red"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="kpi-icon-circle icon-green"><i class="fas fa-dollar-sign"></i></div>
                 <div class="kpi-content">
-                    <span class="kpi-title">Exceso Ratio</span>
-                    <span class="kpi-main" id="kpiExceso">0</span>
-                    <span class="kpi-trend trend-down"><i class="fas fa-arrow-down"></i> Sobre esperado</span>
+                    <span class="kpi-title">Venta USD</span>
+                    <span class="kpi-main" id="kpiUSD">$0</span>
+                    <span class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> Total</span>
                 </div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-icon-circle icon-orange"><i class="fas fa-coins"></i></div>
                 <div class="kpi-content">
-                    <span class="kpi-title">Pérdida Total</span>
-                    <span class="kpi-main" id="kpiPerdida">S/ 0</span>
-                    <span class="kpi-trend trend-down">S/ Por exceso</span>
+                    <span class="kpi-title">Venta S/</span>
+                    <span class="kpi-main" id="kpiSoles">S/ 0</span>
+                    <span class="kpi-trend trend-up">Total</span>
                 </div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-icon-circle icon-green"><i class="fas fa-warehouse"></i></div>
+                <div class="kpi-icon-circle icon-orange"><i class="fas fa-shopping-cart"></i></div>
                 <div class="kpi-content">
-                    <span class="kpi-title">INSTTALE</span>
-                    <span class="kpi-main" id="kpiPropias">0</span>
-                    <span class="kpi-trend trend-up">Propias</span>
+                    <span class="kpi-title">Ticket Prom. USD</span>
+                    <span class="kpi-main" id="kpiTicket">$0</span>
+                    <span class="kpi-trend trend-up">Promedio</span>
                 </div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-icon-circle icon-orange"><i class="fas fa-key"></i></div>
+                <div class="kpi-icon-circle icon-cyan"><i class="fas fa-globe"></i></div>
                 <div class="kpi-content">
-                    <span class="kpi-title">ALQUILADA</span>
-                    <span class="kpi-main" id="kpiAlquiladas">0</span>
-                    <span class="kpi-trend trend-down">Terceros</span>
+                    <span class="kpi-title">Países</span>
+                    <span class="kpi-main" id="kpiPaises">0</span>
+                    <span class="kpi-trend trend-up">Destinos</span>
                 </div>
             </div>
         </section>
@@ -90,16 +90,28 @@
         <!-- Filtros -->
         <section class="filters-row">
             <div class="filter-chip">
-                <i class="fas fa-tractor"></i>
-                <select id="filterEquipo" class="filter-select"><option value="">Tipo Equipo</option></select>
+                <i class="fas fa-globe-americas"></i>
+                <select id="filterPais" class="filter-select"><option value="">País</option></select>
             </div>
             <div class="filter-chip">
-                <i class="fas fa-user-tie"></i>
-                <select id="filterPropietario" class="filter-select"><option value="">Propietario</option></select>
+                <i class="fas fa-calendar"></i>
+                <select id="filterMes" class="filter-select"><option value="">Mes</option></select>
             </div>
             <div class="filter-chip">
-                <i class="fas fa-barcode"></i>
-                <select id="filterCodigo" class="filter-select"><option value="">Código</option></select>
+                <i class="fas fa-calendar-week"></i>
+                <select id="filterSemana" class="filter-select"><option value="">Semana</option></select>
+            </div>
+            <div class="filter-chip">
+                <i class="fas fa-truck"></i>
+                <select id="filterTransporte" class="filter-select"><option value="">Transporte</option></select>
+            </div>
+            <div class="filter-chip">
+                <i class="fas fa-file-contract"></i>
+                <select id="filterIncoterm" class="filter-select"><option value="">Incoterm</option></select>
+            </div>
+            <div class="filter-chip">
+                <i class="fas fa-cube"></i>
+                <select id="filterUnidad" class="filter-select"><option value="">Tipo Unidad</option></select>
             </div>
             <button id="clearFilters" class="btn-clear-chips">
                 <i class="fas fa-eraser"></i> Limpiar
@@ -109,107 +121,107 @@
         <!-- Gráficos -->
         <section class="charts-exec">
 
-            <!-- 1. Real vs Esperado por equipo (barras agrupadas) -->
+            <!-- 1. Evolución diaria -->
             <div class="chart-exec-card chart-full">
                 <div class="chart-exec-header">
-                    <i class="fas fa-chart-column chart-icon"></i>
-                    <h3>Consumo Real vs Esperado por Equipo</h3>
+                    <i class="fas fa-arrow-trend-up chart-icon"></i>
+                    <h3>Evolución Diaria de Ventas (USD)</h3>
                 </div>
-                <canvas id="chartRealEsperado"></canvas>
+                <canvas id="chartEvolucion"></canvas>
             </div>
 
-            <!-- 2. Top 10 equipos con mayor pérdida -->
+            <!-- 2. Ventas por País -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-ranking-star chart-icon"></i>
-                    <h3>Top 10 Equipos con Mayor Pérdida</h3>
+                    <i class="fas fa-globe chart-icon"></i>
+                    <h3>Ventas por País (USD)</h3>
                 </div>
-                <canvas id="chartTopPerdida"></canvas>
+                <canvas id="chartPais"></canvas>
             </div>
 
-            <!-- 3. Pérdida por tipo de equipo -->
+            <!-- 3. Ventas por Mes -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-chart-pie chart-icon"></i>
-                    <h3>Pérdida por Tipo de Equipo</h3>
+                    <i class="fas fa-calendar chart-icon"></i>
+                    <h3>Ventas por Mes (USD)</h3>
                 </div>
-                <canvas id="chartPerdidaTipo"></canvas>
+                <canvas id="chartMes"></canvas>
             </div>
 
-            <!-- 4. Propios vs Alquilados (anillo) -->
+            <!-- 4. Incoterms -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-circle-nodes chart-icon"></i>
-                    <h3>Propias vs Alquiladas</h3>
+                    <i class="fas fa-file-contract chart-icon"></i>
+                    <h3>Distribución por Incoterm</h3>
                 </div>
                 <div class="chart-doughnut-wrapper">
-                    <canvas id="chartPropiosAlq"></canvas>
+                    <canvas id="chartIncoterm"></canvas>
                     <div class="chart-doughnut-center">
                         <span class="center-value" id="centerTotal">0</span>
-                        <span class="center-label">EQUIPOS</span>
+                        <span class="center-label">DESPACHOS</span>
                     </div>
                 </div>
             </div>
 
-            <!-- 5. Costo total por tipo -->
+            <!-- 5. Tipo de Unidad -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-coins chart-icon"></i>
-                    <h3>Costo Total por Tipo de Equipo</h3>
+                    <i class="fas fa-truck chart-icon"></i>
+                    <h3>Distribución por Tipo de Unidad</h3>
                 </div>
-                <canvas id="chartCostoTipo"></canvas>
+                <canvas id="chartUnidad"></canvas>
             </div>
 
-            <!-- 6. Diferencia ratio por equipo -->
+            <!-- 6. Transportes -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-arrow-trend-up chart-icon"></i>
-                    <h3>Diferencia de Ratio por Equipo</h3>
+                    <i class="fas fa-shipping-fast chart-icon"></i>
+                    <h3>Despachos por Transporte</h3>
                 </div>
-                <canvas id="chartDiferencia"></canvas>
+                <canvas id="chartTransporte"></canvas>
             </div>
 
-            <!-- 7. Distribución de equipos por propietario -->
+            <!-- 7. Top 10 clientes -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-user-tie chart-icon"></i>
-                    <h3>Distribución por Propietario</h3>
+                    <i class="fas fa-ranking-star chart-icon"></i>
+                    <h3>Top 10 Clientes por Venta USD</h3>
                 </div>
-                <canvas id="chartPropietario"></canvas>
+                <canvas id="chartTopClientes"></canvas>
             </div>
 
-            <!-- 8. Progreso de exceso por equipo -->
+            <!-- 8. Volumen por país -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-gauge-high chart-icon"></i>
-                    <h3>Exceso de Consumo por Equipo</h3>
+                    <i class="fas fa-cube chart-icon"></i>
+                    <h3>Volumen m³ por País</h3>
                 </div>
-                <div class="progress-list" id="progressExceso"></div>
+                <canvas id="chartVolumenPais"></canvas>
             </div>
 
-            <!-- 9. Pérdida promedio por tipo -->
+            <!-- 9. Progreso: Top países por participación -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-scale-balanced chart-icon"></i>
-                    <h3>Pérdida Promedio por Equipo (por tipo)</h3>
+                    <i class="fas fa-chart-simple chart-icon"></i>
+                    <h3>Participación de Ventas por País</h3>
                 </div>
-                <canvas id="chartPerdidaPromedio"></canvas>
+                <div class="progress-list" id="progressPaises"></div>
             </div>
 
-            <!-- 10. Eficiencia operativa -->
+            <!-- 10. Semanas -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-bullseye chart-icon"></i>
-                    <h3>Eficiencia Operativa (% real / esperado)</h3>
+                    <i class="fas fa-calendar-week chart-icon"></i>
+                    <h3>Despachos por Semana</h3>
                 </div>
-                <canvas id="chartEficiencia"></canvas>
+                <canvas id="chartSemana"></canvas>
             </div>
 
             <!-- Tabla resumen -->
             <div class="chart-exec-card chart-full">
                 <div class="chart-exec-header">
                     <i class="fas fa-table chart-icon"></i>
-                    <h3>Detalle por Equipo</h3>
+                    <h3>Detalle por Pedido</h3>
                 </div>
                 <div id="tablaResumen"></div>
             </div>

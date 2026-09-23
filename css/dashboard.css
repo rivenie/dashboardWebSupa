@@ -138,7 +138,7 @@ h1, h2, h3, h4 { font-weight: 600; color: var(--text); }
 
 .kpi-content { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .kpi-title { font-size: 0.78rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
-.kpi-main { font-size: 1.6rem; font-weight: 700; color: var(--text); line-height: 1.1; }
+.kpi-main { font-size: 1.5rem; font-weight: 700; color: var(--text); line-height: 1.1; }
 .kpi-trend { font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
 .trend-up { color: var(--green); }
 .trend-down { color: var(--red); }
@@ -259,32 +259,32 @@ h1, h2, h3, h4 { font-weight: 600; color: var(--text); }
 .progress-bar-bg { height: 8px; background: rgba(255, 107, 0, 0.1); border-radius: 4px; overflow: hidden; }
 .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent) 0%, var(--accent-hover) 100%); border-radius: 4px; transition: width 1s ease; }
 
-#tablaResumen { overflow-x: auto; }
-#tablaResumen table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+#tablaResumen { overflow-x: auto; max-height: 500px; overflow-y: auto; }
+#tablaResumen table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 
 #tablaResumen th {
-    background: transparent;
-    color: var(--text-dim);
-    padding: 10px 14px;
+    background: #0F172A;
+    color: var(--accent);
+    padding: 12px 14px;
     text-align: left;
     font-weight: 600;
     border-bottom: 1px solid var(--border);
     font-size: 0.72rem;
     text-transform: uppercase;
+    position: sticky;
+    top: 0;
 }
 
 #tablaResumen td {
-    padding: 12px 14px;
+    padding: 10px 14px;
     border-bottom: 1px solid rgba(42, 58, 82, 0.5);
     color: var(--text);
-    font-size: 0.85rem;
+    font-size: 0.82rem;
 }
 
 #tablaResumen tr:hover td { background: var(--bg-card-hover); }
 
 .table-total-row td { color: var(--accent) !important; font-weight: 700; border-top: 2px solid var(--accent) !important; }
-.value-up { color: var(--green) !important; font-weight: 600; }
-.value-down { color: var(--red) !important; font-weight: 600; }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
@@ -301,5 +301,5 @@ h1, h2, h3, h4 { font-weight: 600; color: var(--text); }
     .filter-select { flex: 1; min-width: auto; }
     .btn-clear-chips { margin-left: 0; justify-content: center; }
     .kpi-row { grid-template-columns: 1fr; }
-    .kpi-main { font-size: 1.4rem; }
+    .kpi-main { font-size: 1.3rem; }
 }
