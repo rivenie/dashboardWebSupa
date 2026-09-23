@@ -13,11 +13,13 @@ const COLORS = {
     green: '#10B981',
     greenNeon: '#00E676',
     red: '#EF4444',
+    orange: '#FB923C',
+    yellow: '#FBBF24',
     gray: '#475569',
     textDim: '#94A3B8'
 };
 
-const PALETTE = [COLORS.accent, COLORS.cyan, COLORS.blue, COLORS.purple, COLORS.green, COLORS.gray, COLORS.red, COLORS.greenNeon];
+const PALETTE = [COLORS.accent, COLORS.cyan, COLORS.blue, COLORS.purple, COLORS.green, COLORS.orange, COLORS.red, COLORS.yellow, COLORS.greenNeon, COLORS.gray];
 
 document.getElementById('fechaActual').textContent = new Date().toLocaleDateString('es-PE', {
     day: '2-digit', month: 'short', year: 'numeric'
@@ -60,7 +62,8 @@ async function cargarDatos() {
 function col(clave) {
     if (dataGlobal.length === 0) return null;
     const keys = Object.keys(dataGlobal[0]);
-    return keys.find(k => k.trim().toLowerCase() === clave.trim().toLowerCase());
+    const c = keys.find(k => k.trim().toLowerCase() === clave.trim().toLowerCase());
+    return c;
 }
 
 function norm(v) {
@@ -70,53 +73,47 @@ function norm(v) {
 function num(v) {
     if (typeof v === 'number') return v;
     if (!v) return 0;
-    return parseFloat(v.toString().replace(/[^0-9.-]/g, '')) || 0;
+    return parseFloat(v.toString().replace(/,/g, '')) || 0;
 }
 
-function money(v) {
-    return '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function moneySoles(v) {
-    return 'S/ ' + v.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function fechaCorta(f) {
-    if (!f) return '';
-    const partes = f.split('/');
-    if (partes.length === 3) return partes[0] + '/' + partes[1];
-    return f;
+function extraerMes(fecha) {
+    if (!fecha) return '';
+    const partes = fecha.toString().split(' ')[0].split('-');
+    if (partes.length >= 2) {
+        const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        const idx = parseInt(partes[1]) - 1;
+        return meses[idx] || '';
+    }
+    return '';
 }
 
 // ============ KPIs ============
 function calcularKPIs() {
-    const cDespacho = col('CANTIDAD DE DESPACHOS') || col('CANT_DESPACHOS');
-    const cVolumen = col('VOLUMEN M3');
-    const cUSD = col('VALOR DE_VENTA_$');
-    const cSoles = col('VALOR DE_VENTA_S/.') || col('VALOR DE VENTA_S/.');
-    const cPais = col('COUNTRY');
-    const cPedido = col('PEDIDO');
+    const cStatus = col('Status Final');
+    const cFlota = col('Flota');
+    const cComp = col('Componente');
 
-    let despachos = 0, volumen = 0, usd = 0, soles = 0;
-    const paises = new Set();
+    let alerta = 0, precaucion = 0, normal = 0;
+    const flotas = new Set();
+    const componentes = new Set();
 
     dataGlobal.forEach(f => {
-        despachos += num(f[cDespacho]);
-        volumen += num(f[cVolumen]);
-        usd += num(f[cUSD]);
-        soles += num(f[cSoles]);
-        if (f[cPais]) paises.add(norm(f[cPais]));
+        const s = norm(f[cStatus]).toLowerCase();
+        if (s === 'alerta') alerta++;
+        else if (s === 'precaución' || s === 'precaucion') precaucion++;
+        else if (s === 'normal') normal++;
+        if (f[cFlota]) flotas.add(norm(f[cFlota]));
+        if (f[cComp]) componentes.add(norm(f[cComp]));
     });
 
-    const ticket = dataGlobal.length > 0 ? usd / dataGlobal.length : 0;
+    animar('kpiTotal', dataGlobal.length);
+    animar('kpiAlerta', alerta);
+    animar('kpiPrecaucion', precaucion);
+    animar('kpiNormal', normal);
+    animar('kpiFlotas', flotas.size);
+    animar('kpiComponentes', componentes.size);
 
-    animar('kpiDespachos', despachos);
-    document.getElementById('kpiVolumen').textContent = volumen.toLocaleString('en-US', { maximumFractionDigits: 1 });
-    document.getElementById('kpiUSD').textContent = money(usd);
-    document.getElementById('kpiSoles').textContent = moneySoles(soles);
-    document.getElementById('kpiTicket').textContent = money(ticket);
-    animar('kpiPaises', paises.size);
-    document.getElementById('centerTotal').textContent = despachos;
+    document.getElementById('centerTotal').textContent = dataGlobal.length;
 }
 
 function animar(id, valor) {
@@ -134,12 +131,12 @@ function animar(id, valor) {
 
 // ============ FILTROS ============
 function cargarFiltros() {
-    llenar('filterPais', 'COUNTRY');
-    llenar('filterMes', 'MES');
-    llenar('filterSemana', 'SEMANA');
-    llenar('filterTransporte', 'TRANSPORTE');
-    llenar('filterIncoterm', 'INCOTERMS');
-    llenar('filterUnidad', 'TIPO DE UNIDAD');
+    llenar('filterFlota', 'Flota');
+    llenar('filterFabricante', 'Fabricante');
+    llenar('filterComponente', 'Componente');
+    llenar('filterClase', 'Clase de componente');
+    llenar('filterStatus', 'Status Final');
+    llenar('filterSalud', 'Status Salud');
 }
 
 function llenar(id, columna) {
@@ -159,27 +156,27 @@ function llenar(id, columna) {
 }
 
 function aplicarFiltros() {
-    const pais = document.getElementById('filterPais').value;
-    const mes = document.getElementById('filterMes').value;
-    const semana = document.getElementById('filterSemana').value;
-    const transporte = document.getElementById('filterTransporte').value;
-    const incoterm = document.getElementById('filterIncoterm').value;
-    const unidad = document.getElementById('filterUnidad').value;
+    const flota = document.getElementById('filterFlota').value;
+    const fabricante = document.getElementById('filterFabricante').value;
+    const componente = document.getElementById('filterComponente').value;
+    const clase = document.getElementById('filterClase').value;
+    const status = document.getElementById('filterStatus').value;
+    const salud = document.getElementById('filterSalud').value;
 
-    const cPais = col('COUNTRY');
-    const cMes = col('MES');
-    const cSemana = col('SEMANA');
-    const cTrans = col('TRANSPORTE');
-    const cInc = col('INCOTERMS');
-    const cUni = col('TIPO DE UNIDAD');
+    const cFlota = col('Flota');
+    const cFab = col('Fabricante');
+    const cComp = col('Componente');
+    const cClase = col('Clase de componente');
+    const cStatus = col('Status Final');
+    const cSalud = col('Status Salud');
 
     const filt = dataGlobal.filter(f => {
-        if (pais && norm(f[cPais]) !== pais) return false;
-        if (mes && norm(f[cMes]) !== mes) return false;
-        if (semana && norm(f[cSemana]) !== semana) return false;
-        if (transporte && norm(f[cTrans]) !== transporte) return false;
-        if (incoterm && norm(f[cInc]) !== incoterm) return false;
-        if (unidad && norm(f[cUni]) !== unidad) return false;
+        if (flota && norm(f[cFlota]) !== flota) return false;
+        if (fabricante && norm(f[cFab]) !== fabricante) return false;
+        if (componente && norm(f[cComp]) !== componente) return false;
+        if (clase && norm(f[cClase]) !== clase) return false;
+        if (status && norm(f[cStatus]) !== status) return false;
+        if (salud && norm(f[cSalud]) !== salud) return false;
         return true;
     });
 
@@ -193,101 +190,140 @@ function aplicarFiltros() {
 
 // ============ GRÁFICOS ============
 function crearGraficos() {
-    const cFecha = col('FECHA_TRANSACCION');
-    const cPais = col('COUNTRY');
-    const cMes = col('MES');
-    const cSemana = col('SEMANA');
-    const cTrans = col('TRANSPORTE');
-    const cInc = col('INCOTERMS');
-    const cUni = col('TIPO DE UNIDAD');
-    const cCliente = col('NOMBRE_CLIENTE');
-    const cUSD = col('VALOR DE_VENTA_$');
-    const cVolumen = col('VOLUMEN M3');
-    const cDespacho = col('CANTIDAD DE DESPACHOS') || col('CANT_DESPACHOS');
+    const cStatus = col('Status Final');
+    const cTipo = col('Tipo de equipo');
+    const cComp = col('Componente');
+    const cFecha = col('Fecha de reporte');
+    const cHierro = col('Hierro');
+    const cCobre = col('Cobre');
+    const cPlomo = col('Plomo');
+    const cAluminio = col('Aluminio');
+    const cCromo = col('Cromo');
+    const cEstano = col('Estano');
+    const cAgua = col('Contenido de agua');
+    const cSilicio = col('Silicio');
+    const cSodio = col('Sodio');
+    const cVisc = col('Viscosidad cinematica a 100c');
+    const cFab = col('Fabricante');
+    const cHrsEq = col('Hrs equipo');
+    const cHrsAce = col('Hrs aceite');
+    const cSalud = col('Status Salud');
+    const cCont = col('Status Contaminacion');
+    const cDesg = col('Status Desgastes');
 
-    // 1. Evolución diaria
-    const porDia = {};
+    // 1. Status Final
+    const porStatus = {};
     dataGlobal.forEach(f => {
-        const fecha = fechaCorta(norm(f[cFecha]));
-        if (!fecha) return;
-        porDia[fecha] = (porDia[fecha] || 0) + num(f[cUSD]);
+        const s = norm(f[cStatus]) || 'Sin status';
+        porStatus[s] = (porStatus[s] || 0) + 1;
     });
-    renderLine('chartEvolucion', Object.keys(porDia), Object.values(porDia));
+    renderDoughnut('chartStatusFinal', Object.keys(porStatus), Object.values(porStatus));
 
-    // 2. Ventas por País
-    const porPais = {};
+    // 2. Alertas por Tipo de Equipo
+    const alertasPorTipo = {};
+    dataGlobal.filter(f => {
+        const s = norm(f[cStatus]).toLowerCase();
+        return s === 'alerta' || s === 'precaución' || s === 'precaucion';
+    }).forEach(f => {
+        const t = norm(f[cTipo]) || 'Sin tipo';
+        alertasPorTipo[t] = (alertasPorTipo[t] || 0) + 1;
+    });
+    renderBar('chartAlertasTipo', Object.keys(alertasPorTipo), Object.values(alertasPorTipo), COLORS.accent);
+
+    // 3. Componentes con más alertas de desgaste
+    const alertasDesgaste = {};
+    dataGlobal.filter(f => {
+        const d = norm(f[cDesg]).toLowerCase();
+        return d === 'alerta' || d === 'precaución' || d === 'precaucion';
+    }).forEach(f => {
+        const c = norm(f[cComp]) || 'Sin componente';
+        alertasDesgaste[c] = (alertasDesgaste[c] || 0) + 1;
+    });
+    const topDesgaste = Object.entries(alertasDesgaste).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    renderHBar('chartAlertasDesgaste', topDesgaste.map(d => d[0]), topDesgaste.map(d => d[1]), COLORS.red);
+
+    // 4. Evolución de alertas por mes
+    const alertasMes = {};
+    dataGlobal.filter(f => {
+        const s = norm(f[cStatus]).toLowerCase();
+        return s === 'alerta' || s === 'precaución' || s === 'precaucion';
+    }).forEach(f => {
+        const m = extraerMes(norm(f[cFecha])) || 'Sin mes';
+        alertasMes[m] = (alertasMes[m] || 0) + 1;
+    });
+    renderLine('chartEvolucionMes', Object.keys(alertasMes), Object.values(alertasMes));
+
+    // 5. Top 10 equipos con mayor hierro
+    const topFe = dataGlobal.map(f => ({
+        flota: norm(f[col('Flota')]),
+        fe: num(f[cHierro])
+    })).sort((a, b) => b.fe - a.fe).slice(0, 10);
+    renderHBar('chartTopHierro', topFe.map(t => t.flota), topFe.map(t => t.fe), COLORS.red);
+
+    // 6. Equipos con presencia de agua
+    const aguaData = {};
     dataGlobal.forEach(f => {
-        const p = norm(f[cPais]) || 'Sin país';
-        porPais[p] = (porPais[p] || 0) + num(f[cUSD]);
+        const agua = norm(f[cAgua]).toLowerCase();
+        const flota = norm(f[col('Flota')]) || 'Sin flota';
+        if (agua.includes('detectado') || agua === 'sí' || agua === 'si') {
+            aguaData[flota] = (aguaData[flota] || 0) + 1;
+        }
     });
-    const paisesOrdenados = Object.entries(porPais).sort((a, b) => b[1] - a[1]).slice(0, 10);
-    renderHBar('chartPais', paisesOrdenados.map(p => p[0]), paisesOrdenados.map(p => p[1]), COLORS.accent);
+    renderBar('chartAgua', Object.keys(aguaData), Object.values(aguaData), COLORS.cyan);
 
-    // 3. Ventas por Mes
-    const porMes = {};
+    // 7. Alertas por viscosidad
+    const viscData = dataGlobal.map(f => ({
+        flota: norm(f[col('Flota')]),
+        visc: num(f[cVisc])
+    })).filter(v => v.visc > 0).sort((a, b) => a.visc - b.visc).slice(0, 10);
+    renderBar('chartViscosidad', viscData.map(v => v.flota), viscData.map(v => v.visc), COLORS.purple);
+
+    // 8. Status por fabricante
+    const fabricantes = [...new Set(dataGlobal.map(f => norm(f[cFab])).filter(v => v))].slice(0, 8);
+    const statusPorFab = {};
+    fabricantes.forEach(fab => {
+        statusPorFab[fab] = { alerta: 0, precaucion: 0, normal: 0 };
+        dataGlobal.filter(f => norm(f[cFab]) === fab).forEach(f => {
+            const s = norm(f[cStatus]).toLowerCase();
+            if (s === 'alerta') statusPorFab[fab].alerta++;
+            else if (s === 'precaución' || s === 'precaucion') statusPorFab[fab].precaucion++;
+            else if (s === 'normal') statusPorFab[fab].normal++;
+        });
+    });
+    renderStacked('chartFabricante', fabricantes, statusPorFab);
+
+    // 9. Horas aceite vs horas equipo
+    const horasData = dataGlobal.slice(0, 15).map(f => ({
+        flota: norm(f[col('Flota')]),
+        eq: num(f[cHrsEq]),
+        ace: num(f[cHrsAce])
+    }));
+    renderGrouped('chartHoras', horasData.map(h => h.flota), horasData.map(h => h.eq), horasData.map(h => h.ace));
+
+    // 10. Ranking de componentes con más desgaste (progreso)
+    const desgastePorComp = {};
     dataGlobal.forEach(f => {
-        const m = norm(f[cMes]) || 'Sin mes';
-        porMes[m] = (porMes[m] || 0) + num(f[cUSD]);
+        const c = norm(f[cComp]) || 'Sin componente';
+        const fe = num(f[cHierro]);
+        const cu = num(f[cCobre]);
+        const pb = num(f[cPlomo]);
+        desgastePorComp[c] = (desgastePorComp[c] || 0) + fe + cu + pb;
     });
-    renderBar('chartMes', Object.keys(porMes), Object.values(porMes), COLORS.green);
+    const rankingComp = Object.entries(desgastePorComp).sort((a, b) => b[1] - a[1]).slice(0, 8);
+    const maxDesg = rankingComp[0] ? rankingComp[0][1] : 1;
 
-    // 4. Incoterms
-    const porInc = {};
-    dataGlobal.forEach(f => {
-        const i = norm(f[cInc]) || 'Sin incoterm';
-        porInc[i] = (porInc[i] || 0) + num(f[cDespacho]);
-    });
-    renderDoughnut('chartIncoterm', Object.keys(porInc), Object.values(porInc));
-
-    // 5. Tipo Unidad
-    const porUni = {};
-    dataGlobal.forEach(f => {
-        const u = norm(f[cUni]) || 'Sin tipo';
-        porUni[u] = (porUni[u] || 0) + num(f[cDespacho]);
-    });
-    renderDoughnut('chartUnidad', Object.keys(porUni), Object.values(porUni));
-
-    // 6. Transportes
-    const porTrans = {};
-    dataGlobal.forEach(f => {
-        const t = norm(f[cTrans]) || 'Sin transporte';
-        porTrans[t] = (porTrans[t] || 0) + num(f[cDespacho]);
-    });
-    renderBar('chartTransporte', Object.keys(porTrans), Object.values(porTrans), COLORS.cyan);
-
-    // 7. Top 10 clientes
-    const porCliente = {};
-    dataGlobal.forEach(f => {
-        const cl = norm(f[cCliente]) || 'Sin cliente';
-        porCliente[cl] = (porCliente[cl] || 0) + num(f[cUSD]);
-    });
-    const topClientes = Object.entries(porCliente).sort((a, b) => b[1] - a[1]).slice(0, 10);
-    renderHBar('chartTopClientes', topClientes.map(c => c[0].substring(0, 25)), topClientes.map(c => c[1]), COLORS.purple);
-
-    // 8. Volumen por país
-    const volPorPais = {};
-    dataGlobal.forEach(f => {
-        const p = norm(f[cPais]) || 'Sin país';
-        volPorPais[p] = (volPorPais[p] || 0) + num(f[cVolumen]);
-    });
-    const volOrdenado = Object.entries(volPorPais).sort((a, b) => b[1] - a[1]).slice(0, 10);
-    renderHBar('chartVolumenPais', volOrdenado.map(v => v[0]), volOrdenado.map(v => v[1]), COLORS.cyan);
-
-    // 9. Progreso por país (participación)
-    const totalUSD = Object.values(porPais).reduce((a, b) => a + b, 0);
-    const cont = document.getElementById('progressPaises');
+    const cont = document.getElementById('progressComponentes');
     if (cont) {
         cont.innerHTML = '';
-        paisesOrdenados.slice(0, 8).forEach(([pais, monto]) => {
-            const percent = totalUSD > 0 ? ((monto / totalUSD) * 100).toFixed(1) : 0;
+        rankingComp.forEach(([comp, val]) => {
+            const percent = ((val / maxDesg) * 100).toFixed(1);
             const item = document.createElement('div');
             item.className = 'progress-item';
             item.innerHTML = `
                 <div class="progress-header">
-                    <span class="progress-label"><i class="fas fa-globe"></i> ${pais}</span>
+                    <span class="progress-label"><i class="fas fa-cog"></i> ${comp}</span>
                     <span class="progress-values">
-                        <span class="progress-percent">${percent}%</span>
-                        <span class="progress-count">${money(monto)}</span>
+                        <span class="progress-percent">${val.toFixed(0)} ppm</span>
                     </span>
                 </div>
                 <div class="progress-bar-bg">
@@ -298,58 +334,48 @@ function crearGraficos() {
         });
     }
 
-    // 10. Despachos por semana
-    const porSem = {};
-    dataGlobal.forEach(f => {
-        const s = norm(f[cSemana]) || 'Sin semana';
-        porSem[s] = (porSem[s] || 0) + num(f[cDespacho]);
-    });
-    const semanasOrdenadas = Object.keys(porSem).sort();
-    renderBar('chartSemana', semanasOrdenadas, semanasOrdenadas.map(s => porSem[s]), COLORS.accent);
+    // 11. Metales de desgaste (top 8 equipos, barras agrupadas)
+    const metalesData = dataGlobal.slice(0, 8);
+    renderMetales('chartMetales',
+        metalesData.map(f => norm(f[col('Flota')])),
+        metalesData.map(f => num(f[cHierro])),
+        metalesData.map(f => num(f[cCobre])),
+        metalesData.map(f => num(f[cPlomo]))
+    );
+
+    // 12. Contaminación silicio / sodio
+    const contData = dataGlobal.slice(0, 10);
+    renderGrouped('chartContaminacion',
+        contData.map(f => norm(f[col('Flota')])),
+        contData.map(f => num(f[cSilicio])),
+        contData.map(f => num(f[cSodio]))
+    );
 }
 
 // ============ RENDERIZADORES ============
-function renderLine(id, labels, data) {
+function renderDoughnut(id, labels, data) {
     const ctx = document.getElementById(id);
     if (!ctx) return;
     if (charts[id]) charts[id].destroy();
 
-    const maxValue = Math.max(...data);
-    const maxIndex = data.indexOf(maxValue);
-
     charts[id] = new Chart(ctx, {
-        type: 'line',
+        type: 'doughnut',
         data: {
             labels: labels,
             datasets: [{
-                label: 'Ventas USD',
                 data: data,
-                borderColor: COLORS.cyan,
-                backgroundColor: 'rgba(0, 210, 255, 0.1)',
-                borderWidth: 3,
-                tension: 0.4,
-                fill: true,
-                pointBackgroundColor: COLORS.cyan,
-                pointBorderColor: '#1E293B',
-                pointBorderWidth: 2,
-                pointRadius: 4
+                backgroundColor: PALETTE.slice(0, labels.length),
+                borderColor: '#1E293B',
+                borderWidth: 3
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            cutout: '65%',
             plugins: {
-                legend: { display: false },
-                tooltip: {
-                    ...tooltipStyle(),
-                    callbacks: {
-                        afterBody: (c) => c[0].dataIndex === maxIndex ? '▲ MÁXIMO DEL PERIODO' : ''
-                    }
-                }
-            },
-            scales: {
-                x: { ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { display: false } },
-                y: { beginAtZero: true, ticks: { color: COLORS.textDim }, grid: { color: 'rgba(148,163,184,0.1)' } }
+                legend: { position: 'bottom', labels: { color: COLORS.textDim, font: { family: 'Inter', size: 11 }, padding: 12, usePointStyle: true, boxWidth: 8 } },
+                tooltip: tooltipStyle()
             }
         }
     });
@@ -364,13 +390,7 @@ function renderBar(id, labels, data, color) {
         type: 'bar',
         data: {
             labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: color,
-                borderRadius: 6,
-                borderSkipped: false,
-                barThickness: 24
-            }]
+            datasets: [{ data, backgroundColor: color, borderRadius: 6, borderSkipped: false, barThickness: 20 }]
         },
         options: {
             responsive: true,
@@ -393,13 +413,7 @@ function renderHBar(id, labels, data, color) {
         type: 'bar',
         data: {
             labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: color,
-                borderRadius: 6,
-                borderSkipped: false,
-                barThickness: 16
-            }]
+            datasets: [{ data, backgroundColor: color, borderRadius: 6, borderSkipped: false, barThickness: 16 }]
         },
         options: {
             indexAxis: 'y',
@@ -414,32 +428,124 @@ function renderHBar(id, labels, data, color) {
     });
 }
 
-function renderDoughnut(id, labels, data) {
+function renderLine(id, labels, data) {
     const ctx = document.getElementById(id);
     if (!ctx) return;
     if (charts[id]) charts[id].destroy();
 
     charts[id] = new Chart(ctx, {
-        type: 'doughnut',
+        type: 'line',
         data: {
             labels: labels,
             datasets: [{
                 data: data,
-                backgroundColor: PALETTE.slice(0, labels.length),
-                borderColor: '#1E293B',
-                borderWidth: 3
+                borderColor: COLORS.cyan,
+                backgroundColor: 'rgba(0, 210, 255, 0.1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: COLORS.cyan,
+                pointBorderColor: '#1E293B',
+                pointBorderWidth: 2,
+                pointRadius: 5
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '65%',
+            plugins: { legend: { display: false }, tooltip: tooltipStyle() },
+            scales: {
+                x: { ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { display: false } },
+                y: { beginAtZero: true, ticks: { color: COLORS.textDim }, grid: { color: 'rgba(148,163,184,0.1)' } }
+            }
+        }
+    });
+}
+
+function renderGrouped(id, labels, d1, d2) {
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+    if (charts[id]) charts[id].destroy();
+
+    charts[id] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Serie 1', data: d1, backgroundColor: COLORS.accent, borderRadius: 4, barThickness: 12 },
+                { label: 'Serie 2', data: d2, backgroundColor: COLORS.cyan, borderRadius: 4, barThickness: 12 }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: { color: COLORS.textDim, font: { family: 'Inter', size: 11 }, padding: 12, usePointStyle: true, boxWidth: 8 }
-                },
+                legend: { labels: { color: COLORS.textDim, font: { family: 'Inter', size: 11 } } },
                 tooltip: tooltipStyle()
+            },
+            scales: {
+                x: { ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { display: false } },
+                y: { ticks: { color: COLORS.textDim }, grid: { color: 'rgba(148,163,184,0.1)' } }
+            }
+        }
+    });
+}
+
+function renderStacked(id, labels, dataObj) {
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+    if (charts[id]) charts[id].destroy();
+
+    charts[id] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Alerta', data: labels.map(l => dataObj[l].alerta), backgroundColor: COLORS.red, borderRadius: 4 },
+                { label: 'Precaución', data: labels.map(l => dataObj[l].precaucion), backgroundColor: COLORS.orange, borderRadius: 4 },
+                { label: 'Normal', data: labels.map(l => dataObj[l].normal), backgroundColor: COLORS.green, borderRadius: 4 }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: COLORS.textDim, font: { family: 'Inter', size: 10 }, usePointStyle: true, boxWidth: 8 } },
+                tooltip: tooltipStyle()
+            },
+            scales: {
+                x: { stacked: true, ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { display: false } },
+                y: { stacked: true, beginAtZero: true, ticks: { color: COLORS.textDim }, grid: { color: 'rgba(148,163,184,0.1)' } }
+            }
+        }
+    });
+}
+
+function renderMetales(id, labels, fe, cu, pb) {
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+    if (charts[id]) charts[id].destroy();
+
+    charts[id] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Hierro', data: fe, backgroundColor: COLORS.red, borderRadius: 4 },
+                { label: 'Cobre', data: cu, backgroundColor: COLORS.accent, borderRadius: 4 },
+                { label: 'Plomo', data: pb, backgroundColor: COLORS.purple, borderRadius: 4 }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: COLORS.textDim, font: { family: 'Inter', size: 10 }, usePointStyle: true, boxWidth: 8 } },
+                tooltip: tooltipStyle()
+            },
+            scales: {
+                x: { ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { display: false } },
+                y: { beginAtZero: true, ticks: { color: COLORS.textDim }, grid: { color: 'rgba(148,163,184,0.1)' } }
             }
         }
     });
@@ -459,55 +565,47 @@ function tooltipStyle() {
 
 // ============ TABLA RESUMEN ============
 function crearTablaResumen() {
-    const cFecha = col('FECHA_TRANSACCION');
-    const cPedido = col('PEDIDO');
-    const cCliente = col('NOMBRE_CLIENTE');
-    const cPais = col('COUNTRY');
-    const cVolumen = col('VOLUMEN M3');
-    const cUSD = col('VALOR DE_VENTA_$');
-    const cSoles = col('VALOR DE_VENTA_S/.') || col('VALOR DE VENTA_S/.');
-    const cInc = col('INCOTERMS');
+    const cFlota = col('Flota');
+    const cDesc = col('Descripcion de equipo');
+    const cTipo = col('Tipo de equipo');
+    const cComp = col('Componente');
+    const cFecha = col('Fecha de reporte');
+    const cHrsEq = col('Hrs equipo');
+    const cStatus = col('Status Final');
+    const cSalud = col('Status Salud');
+    const cCont = col('Status Contaminacion');
+    const cDesg = col('Status Desgastes');
+    const cAdit = col('Status Aditivo');
+    const cFe = col('Hierro');
 
     let html = '<table><thead><tr>';
-    html += '<th>Fecha</th><th>Pedido</th><th>Cliente</th><th>País</th><th>Vol m³</th><th>USD</th><th>Soles</th><th>Incoterm</th>';
+    html += '<th>Flota</th><th>Equipo</th><th>Tipo</th><th>Componente</th><th>Fecha</th><th>Hrs Eq</th><th>Fe ppm</th><th>Status</th><th>Salud</th><th>Contam.</th><th>Desgaste</th><th>Aditivo</th>';
     html += '</tr></thead><tbody>';
 
-    let totVol = 0, totUSD = 0, totSoles = 0;
-
-    dataGlobal.forEach(f => {
-        const vol = num(f[cVolumen]);
-        const usd = num(f[cUSD]);
-        const sol = num(f[cSoles]);
-
-        totVol += vol;
-        totUSD += usd;
-        totSoles += sol;
+    dataGlobal.slice(0, 100).forEach(f => {
+        const s = norm(f[cStatus]);
+        const cls = s.toLowerCase() === 'alerta' ? 'value-down' : (s.toLowerCase() === 'normal' ? 'value-up' : '');
 
         html += `<tr>
-            <td>${norm(f[cFecha])}</td>
-            <td>${norm(f[cPedido])}</td>
-            <td>${norm(f[cCliente])}</td>
-            <td>${norm(f[cPais])}</td>
-            <td>${vol}</td>
-            <td>${money(usd)}</td>
-            <td>${moneySoles(sol)}</td>
-            <td>${norm(f[cInc])}</td>
+            <td>${norm(f[cFlota])}</td>
+            <td>${norm(f[cDesc])}</td>
+            <td>${norm(f[cTipo])}</td>
+            <td>${norm(f[cComp])}</td>
+            <td>${norm(f[cFecha]).split(' ')[0]}</td>
+            <td>${norm(f[cHrsEq])}</td>
+            <td class="${num(f[cFe]) > 100 ? 'value-down' : ''}">${num(f[cFe])}</td>
+            <td class="${cls}">${s}</td>
+            <td>${norm(f[cSalud])}</td>
+            <td>${norm(f[cCont])}</td>
+            <td>${norm(f[cDesg])}</td>
+            <td>${norm(f[cAdit])}</td>
         </tr>`;
     });
-
-    html += `<tr class="table-total-row">
-        <td colspan="4">TOTAL</td>
-        <td>${totVol.toLocaleString('en-US', { maximumFractionDigits: 1 })}</td>
-        <td>${money(totUSD)}</td>
-        <td>${moneySoles(totSoles)}</td>
-        <td></td>
-    </tr>`;
 
     html += '</tbody></table>';
     document.getElementById('tablaResumen').innerHTML = html;
 }
 
-// ============ LIMPIAR ============
 document.getElementById('clearFilters')?.addEventListener('click', () => {
     document.querySelectorAll('.filter-select').forEach(sel => sel.value = '');
     aplicarFiltros();

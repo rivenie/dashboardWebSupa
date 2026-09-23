@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Exportaciones</title>
+    <title>Dashboard Smartlab - Análisis de Aceites</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/dashboard.css">
@@ -21,10 +21,10 @@
 
         <header class="exec-header">
             <div class="exec-title">
-                <div class="exec-logo"><i class="fas fa-ship"></i></div>
+                <div class="exec-logo"><i class="fas fa-flask"></i></div>
                 <div>
-                    <h1>Dashboard de Exportaciones</h1>
-                    <span class="exec-subtitle" id="sheetName">Análisis de ventas y despachos</span>
+                    <h1>Dashboard Smartlab</h1>
+                    <span class="exec-subtitle" id="sheetName">Análisis de Aceites · Diagnóstico de Equipos</span>
                 </div>
             </div>
             <div class="exec-actions">
@@ -38,51 +38,51 @@
         <!-- KPIs -->
         <section class="kpi-row">
             <div class="kpi-card">
-                <div class="kpi-icon-circle"><i class="fas fa-boxes-stacked"></i></div>
+                <div class="kpi-icon-circle"><i class="fas fa-vials"></i></div>
                 <div class="kpi-content">
-                    <span class="kpi-title">Total Despachos</span>
-                    <span class="kpi-main" id="kpiDespachos">0</span>
-                    <span class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> Acumulado</span>
+                    <span class="kpi-title">Total Muestras</span>
+                    <span class="kpi-main" id="kpiTotal">0</span>
+                    <span class="kpi-trend trend-up">Registradas</span>
                 </div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-icon-circle icon-cyan"><i class="fas fa-cube"></i></div>
+                <div class="kpi-icon-circle icon-red"><i class="fas fa-exclamation-triangle"></i></div>
                 <div class="kpi-content">
-                    <span class="kpi-title">Volumen m³</span>
-                    <span class="kpi-main" id="kpiVolumen">0</span>
-                    <span class="kpi-trend trend-up">Total</span>
+                    <span class="kpi-title">En Alerta</span>
+                    <span class="kpi-main" id="kpiAlerta">0</span>
+                    <span class="kpi-trend trend-down"><i class="fas fa-arrow-down"></i> Crítico</span>
                 </div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-icon-circle icon-green"><i class="fas fa-dollar-sign"></i></div>
+                <div class="kpi-icon-circle icon-orange"><i class="fas fa-exclamation-circle"></i></div>
                 <div class="kpi-content">
-                    <span class="kpi-title">Venta USD</span>
-                    <span class="kpi-main" id="kpiUSD">$0</span>
-                    <span class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> Total</span>
+                    <span class="kpi-title">Precaución</span>
+                    <span class="kpi-main" id="kpiPrecaucion">0</span>
+                    <span class="kpi-trend trend-down">Vigilar</span>
                 </div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-icon-circle icon-orange"><i class="fas fa-coins"></i></div>
+                <div class="kpi-icon-circle icon-green"><i class="fas fa-check-circle"></i></div>
                 <div class="kpi-content">
-                    <span class="kpi-title">Venta S/</span>
-                    <span class="kpi-main" id="kpiSoles">S/ 0</span>
-                    <span class="kpi-trend trend-up">Total</span>
+                    <span class="kpi-title">Normales</span>
+                    <span class="kpi-main" id="kpiNormal">0</span>
+                    <span class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> OK</span>
                 </div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-icon-circle icon-orange"><i class="fas fa-shopping-cart"></i></div>
+                <div class="kpi-icon-circle icon-cyan"><i class="fas fa-tractor"></i></div>
                 <div class="kpi-content">
-                    <span class="kpi-title">Ticket Prom. USD</span>
-                    <span class="kpi-main" id="kpiTicket">$0</span>
-                    <span class="kpi-trend trend-up">Promedio</span>
+                    <span class="kpi-title">Flotas</span>
+                    <span class="kpi-main" id="kpiFlotas">0</span>
+                    <span class="kpi-trend trend-up">Activas</span>
                 </div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-icon-circle icon-cyan"><i class="fas fa-globe"></i></div>
+                <div class="kpi-icon-circle icon-orange"><i class="fas fa-cogs"></i></div>
                 <div class="kpi-content">
-                    <span class="kpi-title">Países</span>
-                    <span class="kpi-main" id="kpiPaises">0</span>
-                    <span class="kpi-trend trend-up">Destinos</span>
+                    <span class="kpi-title">Componentes</span>
+                    <span class="kpi-main" id="kpiComponentes">0</span>
+                    <span class="kpi-trend trend-up">Analizados</span>
                 </div>
             </div>
         </section>
@@ -90,28 +90,28 @@
         <!-- Filtros -->
         <section class="filters-row">
             <div class="filter-chip">
-                <i class="fas fa-globe-americas"></i>
-                <select id="filterPais" class="filter-select"><option value="">País</option></select>
+                <i class="fas fa-tractor"></i>
+                <select id="filterFlota" class="filter-select"><option value="">Flota</option></select>
             </div>
             <div class="filter-chip">
-                <i class="fas fa-calendar"></i>
-                <select id="filterMes" class="filter-select"><option value="">Mes</option></select>
+                <i class="fas fa-industry"></i>
+                <select id="filterFabricante" class="filter-select"><option value="">Fabricante</option></select>
             </div>
             <div class="filter-chip">
-                <i class="fas fa-calendar-week"></i>
-                <select id="filterSemana" class="filter-select"><option value="">Semana</option></select>
+                <i class="fas fa-cog"></i>
+                <select id="filterComponente" class="filter-select"><option value="">Componente</option></select>
             </div>
             <div class="filter-chip">
-                <i class="fas fa-truck"></i>
-                <select id="filterTransporte" class="filter-select"><option value="">Transporte</option></select>
+                <i class="fas fa-layer-group"></i>
+                <select id="filterClase" class="filter-select"><option value="">Clase Componente</option></select>
             </div>
             <div class="filter-chip">
-                <i class="fas fa-file-contract"></i>
-                <select id="filterIncoterm" class="filter-select"><option value="">Incoterm</option></select>
+                <i class="fas fa-circle"></i>
+                <select id="filterStatus" class="filter-select"><option value="">Status Final</option></select>
             </div>
             <div class="filter-chip">
-                <i class="fas fa-cube"></i>
-                <select id="filterUnidad" class="filter-select"><option value="">Tipo Unidad</option></select>
+                <i class="fas fa-heartbeat"></i>
+                <select id="filterSalud" class="filter-select"><option value="">Status Salud</option></select>
             </div>
             <button id="clearFilters" class="btn-clear-chips">
                 <i class="fas fa-eraser"></i> Limpiar
@@ -121,107 +121,125 @@
         <!-- Gráficos -->
         <section class="charts-exec">
 
-            <!-- 1. Evolución diaria -->
-            <div class="chart-exec-card chart-full">
-                <div class="chart-exec-header">
-                    <i class="fas fa-arrow-trend-up chart-icon"></i>
-                    <h3>Evolución Diaria de Ventas (USD)</h3>
-                </div>
-                <canvas id="chartEvolucion"></canvas>
-            </div>
-
-            <!-- 2. Ventas por País -->
+            <!-- 1. Distribución de Status Final -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-globe chart-icon"></i>
-                    <h3>Ventas por País (USD)</h3>
-                </div>
-                <canvas id="chartPais"></canvas>
-            </div>
-
-            <!-- 3. Ventas por Mes -->
-            <div class="chart-exec-card">
-                <div class="chart-exec-header">
-                    <i class="fas fa-calendar chart-icon"></i>
-                    <h3>Ventas por Mes (USD)</h3>
-                </div>
-                <canvas id="chartMes"></canvas>
-            </div>
-
-            <!-- 4. Incoterms -->
-            <div class="chart-exec-card">
-                <div class="chart-exec-header">
-                    <i class="fas fa-file-contract chart-icon"></i>
-                    <h3>Distribución por Incoterm</h3>
+                    <i class="fas fa-chart-pie chart-icon"></i>
+                    <h3>Distribución de Status Final</h3>
                 </div>
                 <div class="chart-doughnut-wrapper">
-                    <canvas id="chartIncoterm"></canvas>
+                    <canvas id="chartStatusFinal"></canvas>
                     <div class="chart-doughnut-center">
                         <span class="center-value" id="centerTotal">0</span>
-                        <span class="center-label">DESPACHOS</span>
+                        <span class="center-label">MUESTRAS</span>
                     </div>
                 </div>
             </div>
 
-            <!-- 5. Tipo de Unidad -->
+            <!-- 2. Equipos con Alerta/Precaución por tipo de equipo -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-truck chart-icon"></i>
-                    <h3>Distribución por Tipo de Unidad</h3>
+                    <i class="fas fa-tractor chart-icon"></i>
+                    <h3>Alertas por Tipo de Equipo</h3>
                 </div>
-                <canvas id="chartUnidad"></canvas>
+                <canvas id="chartAlertasTipo"></canvas>
             </div>
 
-            <!-- 6. Transportes -->
+            <!-- 3. Componentes con más alertas por desgaste -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-shipping-fast chart-icon"></i>
-                    <h3>Despachos por Transporte</h3>
+                    <i class="fas fa-cogs chart-icon"></i>
+                    <h3>Componentes con Más Alertas de Desgaste</h3>
                 </div>
-                <canvas id="chartTransporte"></canvas>
+                <canvas id="chartAlertasDesgaste"></canvas>
             </div>
 
-            <!-- 7. Top 10 clientes -->
+            <!-- 4. Evolución de alertas por mes -->
+            <div class="chart-exec-card">
+                <div class="chart-exec-header">
+                    <i class="fas fa-chart-line chart-icon"></i>
+                    <h3>Evolución de Alertas por Mes</h3>
+                </div>
+                <canvas id="chartEvolucionMes"></canvas>
+            </div>
+
+            <!-- 5. Top equipos con mayor hierro -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
                     <i class="fas fa-ranking-star chart-icon"></i>
-                    <h3>Top 10 Clientes por Venta USD</h3>
+                    <h3>Top 10 Equipos con Mayor Hierro (Fe)</h3>
                 </div>
-                <canvas id="chartTopClientes"></canvas>
+                <canvas id="chartTopHierro"></canvas>
             </div>
 
-            <!-- 8. Volumen por país -->
+            <!-- 6. Contaminación: equipos con agua -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-cube chart-icon"></i>
-                    <h3>Volumen m³ por País</h3>
+                    <i class="fas fa-tint chart-icon"></i>
+                    <h3>Equipos con Presencia de Agua</h3>
                 </div>
-                <canvas id="chartVolumenPais"></canvas>
+                <canvas id="chartAgua"></canvas>
             </div>
 
-            <!-- 9. Progreso: Top países por participación -->
+            <!-- 7. Alertas por viscosidad -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-chart-simple chart-icon"></i>
-                    <h3>Participación de Ventas por País</h3>
+                    <i class="fas fa-oil-can chart-icon"></i>
+                    <h3>Alertas por Viscosidad Fuera de Rango</h3>
                 </div>
-                <div class="progress-list" id="progressPaises"></div>
+                <canvas id="chartViscosidad"></canvas>
             </div>
 
-            <!-- 10. Semanas -->
+            <!-- 8. Comparativo por fabricante -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-calendar-week chart-icon"></i>
-                    <h3>Despachos por Semana</h3>
+                    <i class="fas fa-industry chart-icon"></i>
+                    <h3>Status por Fabricante</h3>
                 </div>
-                <canvas id="chartSemana"></canvas>
+                <canvas id="chartFabricante"></canvas>
+            </div>
+
+            <!-- 9. Horas aceite vs horas equipo -->
+            <div class="chart-exec-card">
+                <div class="chart-exec-header">
+                    <i class="fas fa-clock chart-icon"></i>
+                    <h3>Horas Aceite vs Horas Equipo por Componente</h3>
+                </div>
+                <canvas id="chartHoras"></canvas>
+            </div>
+
+            <!-- 10. Ranking de componentes con más desgaste -->
+            <div class="chart-exec-card">
+                <div class="chart-exec-header">
+                    <i class="fas fa-ranking-star chart-icon"></i>
+                    <h3>Ranking de Componentes con Más Desgaste</h3>
+                </div>
+                <div class="progress-list" id="progressComponentes"></div>
+            </div>
+
+            <!-- 11. Metales de desgaste (comparativa) -->
+            <div class="chart-exec-card">
+                <div class="chart-exec-header">
+                    <i class="fas fa-atom chart-icon"></i>
+                    <h3>Metales de Desgaste - Top Equipos</h3>
+                </div>
+                <canvas id="chartMetales"></canvas>
+            </div>
+
+            <!-- 12. Contaminación general -->
+            <div class="chart-exec-card">
+                <div class="chart-exec-header">
+                    <i class="fas fa-biohazard chart-icon"></i>
+                    <h3>Contaminación por Silicio y Sodio</h3>
+                </div>
+                <canvas id="chartContaminacion"></canvas>
             </div>
 
             <!-- Tabla resumen -->
             <div class="chart-exec-card chart-full">
                 <div class="chart-exec-header">
                     <i class="fas fa-table chart-icon"></i>
-                    <h3>Detalle por Pedido</h3>
+                    <h3>Detalle de Análisis</h3>
                 </div>
                 <div id="tablaResumen"></div>
             </div>

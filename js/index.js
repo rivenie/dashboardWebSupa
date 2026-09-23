@@ -1,3 +1,4 @@
+// ============ CONFIGURACIÓN SUPABASE ============
 const SUPABASE_URL = "https://uoftarfxakkpevugdycg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_vT_w6EoVLl-BK12ojRTaOg_UeSXAVvh";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -46,23 +47,41 @@ function procesarPestaña(nombre) {
 
     if (rows.length === 0) return;
 
-    const headers = rows[0];
-    dataGlobal = rows.slice(1).map(row => {
-        const obj = {};
-        headers.forEach((h, i) => { obj[h] = row[i]; });
-        return obj;
-    });
+    // ============ DETECTAR FILA DE ENCABEZADOS REAL ============
+    // Busca la fila que contiene "Status Final" o "Estado de reporte"
+    let headerRowIndex = 0;
+    for (let i = 0; i < Math.min(rows.length, 10); i++) {
+        const fila = rows[i].map(c => (c || '').toString().trim().toLowerCase());
+        if (fila.includes('status final') || fila.includes('estado de reporte') || fila.includes('flota')) {
+            headerRowIndex = i;
+            break;
+        }
+    }
 
+    const headers = rows[headerRowIndex];
+    const dataRows = rows.slice(headerRowIndex + 1);
+
+    dataGlobal = dataRows.map(row => {
+        const obj = {};
+        headers.forEach((h, i) => {
+            if (h && h.toString().trim() !== '') {
+                obj[h.toString().trim()] = row[i];
+            }
+        });
+        return obj;
+    }).filter(f => Object.values(f).some(v => v !== undefined && v !== null && v !== ''));
+
+    // Renderizar tabla previa
     let html = '<table><thead><tr>';
     headers.forEach(h => html += `<th>${h || ''}</th>`);
     html += '</tr></thead><tbody>';
-    for (let i = 1; i < rows.length; i++) {
+    dataRows.slice(0, 100).forEach(row => {
         html += '<tr>';
         headers.forEach((_, idx) => {
-            html += `<td>${rows[i][idx] !== undefined ? rows[i][idx] : ''}</td>`;
+            html += `<td>${row[idx] !== undefined ? row[idx] : ''}</td>`;
         });
         html += '</tr>';
-    }
+    });
     html += '</tbody></table>';
     tableContainer.innerHTML = html;
 }
