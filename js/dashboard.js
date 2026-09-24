@@ -2,7 +2,7 @@ const SUPABASE_URL = "https://uoftarfxakkpevugdycg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_vT_w6EoVLl-BK12ojRTaOg_UeSXAVvh";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let hojas = {};
+let dataGlobal = [];
 let charts = {};
 
 const COLORS = {
@@ -15,46 +15,112 @@ const PALETTE = [COLORS.accent, COLORS.cyan, COLORS.blue, COLORS.purple, COLORS.
 document.getElementById('fechaActual').textContent = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' });
 
 // ============ CARGA ============
-async function cargarTodo() {
-    const { data, error } = await supabaseClient.from('dashboard_data').select('*');
-    if (error) throw error;
+async function cargarDatos() {
+    try {
+        const { data, error } = await supabaseClient
+            .from('dashboard_data')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
 
-    hojas = {};
-    data.forEach(row => {
-        hojas[row.sheet_name] = row.data;
-    });
+        if (error) throw error;
 
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
+        dataGlobal = data.data;
+        document.getElementById('sheetName').textContent = 'Pestaña: ' + data.sheet_name;
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+
+        calcularKPIs();
+        cargarFiltros();
+        crearGraficos();
+        crearTablaResumen();
+
+        document.querySelectorAll('.filter-select').forEach(sel => {
+            sel.addEventListener('change', aplicarFiltros);
+        });
+    } catch (err) {
+        document.getElementById('loading').innerHTML = `
+            <p style="color:#ff6b00;">No hay datos disponibles.</p>
+            <p style="color:#94a3b8;margin-top:10px;">Sube un Excel desde el index.html.</p>
+        `;
+    }
 }
 
 // ============ HELPERS ============
-function col(data, clave) {
-    if (!data || data.length === 0) return null;
-    const keys = Object.keys(data[0]);
+function col(clave) {
+    if (dataGlobal.length === 0) return null;
+    const keys = Object.keys(dataGlobal[0]);
     return keys.find(k => k.trim().toLowerCase() === clave.trim().toLowerCase());
-}
-function colParcial(data, contiene) {
-    if (!data || data.length === 0) return null;
-    const keys = Object.keys(data[0]);
-    return keys.find(k => k.toLowerCase().includes(contiene.toLowerCase()));
 }
 function norm(v) { return v !== undefined && v !== null ? v.toString().trim() : ''; }
 function num(v) {
     if (typeof v === 'number') return v;
     if (!v) return 0;
-    return parseFloat(v.toString().replace(/,/g, '')) || 0;
+    return parseFloat(v.toString().replace(/[^0-9.-]/g, '')) || 0;
 }
-function fechaCorta(f) {
-    if (!f) return '';
-    const partes = f.split(' ')[0].split('-');
-    if (partes.length >= 3) return partes[2] + '/' + partes[1];
-    return f;
-}
+function money(v) { return 'S/ ' + v.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
 // ============ RENDERIZADORES ============
 function tooltipStyle() {
     return { backgroundColor: '#0F172A', titleColor: '#FF6B00', bodyColor: '#FFFFFF', borderColor: '#FF6B00', borderWidth: 1, padding: 12, cornerRadius: 8 };
+}
+
+function renderLine(id, labels, data) {
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+    if (charts[id]) charts[id].destroy();
+    charts[id] = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets: [{ data, borderColor: COLORS.accent, backgroundColor: 'rgba(255, 107, 0, 0.1)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: COLORS.accent, pointBorderColor: '#1E293B', pointBorderWidth: 2, pointRadius: 5 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: tooltipStyle() }, scales: { x: { ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: COLORS.textDim }, grid: { color: 'rgba(148,163,184,0.1)' } } } }
+    });
+}
+
+function renderGrouped(id, labels, d1, d2) {
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+    if (charts[id]) charts[id].destroy();
+    charts[id] = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [
+            { label: 'Usado', data: d1, backgroundColor: COLORS.accent, borderRadius: 4, barThickness: 16 },
+            { label: 'Stock', data: d2, backgroundColor: COLORS.cyan, borderRadius: 4, barThickness: 16 }
+        ]},
+        options: { responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: COLORS.textDim, font: { family: 'Inter', size: 11 } } }, tooltip: tooltipStyle() },
+            scales: { x: { ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: COLORS.textDim }, grid: { color: 'rgba(148,163,184,0.1)' } } }
+        }
+    });
+}
+
+function renderStacked(id, labels, datasets) {
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+    if (charts[id]) charts[id].destroy();
+    charts[id] = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets },
+        options: { responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { color: COLORS.textDim, font: { family: 'Inter', size: 10 }, usePointStyle: true, boxWidth: 8 } }, tooltip: tooltipStyle() },
+            scales: { x: { stacked: true, ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { display: false } }, y: { stacked: true, beginAtZero: true, ticks: { color: COLORS.textDim }, grid: { color: 'rgba(148,163,184,0.1)' } } }
+        }
+    });
+}
+
+function renderHBar(id, labels, data, color) {
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+    if (charts[id]) charts[id].destroy();
+    charts[id] = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ data, backgroundColor: color, borderRadius: 6, borderSkipped: false, barThickness: 16 }] },
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: tooltipStyle() },
+            scales: { x: { ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { color: 'rgba(148,163,184,0.1)' } }, y: { ticks: { color: '#fff', font: { family: 'Inter', size: 10 } }, grid: { display: false } } }
+        }
+    });
 }
 
 function renderDoughnut(id, labels, data) {
@@ -69,396 +135,213 @@ function renderDoughnut(id, labels, data) {
     });
 }
 
-function renderBar(id, labels, data, color) {
-    const ctx = document.getElementById(id);
-    if (!ctx) return;
-    if (charts[id]) charts[id].destroy();
-    charts[id] = new Chart(ctx, {
-        type: 'bar',
-        data: { labels, datasets: [{ data, backgroundColor: color, borderRadius: 6, borderSkipped: false, barThickness: 22 }] },
-        options: { responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: tooltipStyle() },
-            scales: { x: { ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: COLORS.textDim }, grid: { color: 'rgba(148,163,184,0.1)' } } } }
-    });
-}
+// ============ KPIs ============
+function calcularKPIs() {
+    const cIngresada = col('Cantidad Ingresada');
+    const cUsada = col('Cantidad Usada');
+    const cStock = col('Stock Actual');
+    const cCostoTotal = col('Costo Total (S/)') || col('Costo Total');
+    const cMateria = col('Materia Prima');
+    const cArea = col('Área Destino');
 
-function renderHBar(id, labels, data, color) {
-    const ctx = document.getElementById(id);
-    if (!ctx) return;
-    if (charts[id]) charts[id].destroy();
-    charts[id] = new Chart(ctx, {
-        type: 'bar',
-        data: { labels, datasets: [{ data, backgroundColor: color, borderRadius: 6, borderSkipped: false, barThickness: 16 }] },
-        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: tooltipStyle() },
-            scales: { x: { ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { color: 'rgba(148,163,184,0.1)' } }, y: { ticks: { color: '#fff', font: { family: 'Inter', size: 10 } }, grid: { display: false } } } }
-    });
-}
+    let totalIng = 0, totalUsa = 0, totalStock = 0, totalCosto = 0;
+    const materias = new Set(), areas = new Set();
 
-function renderLine(id, labels, data) {
-    const ctx = document.getElementById(id);
-    if (!ctx) return;
-    if (charts[id]) charts[id].destroy();
-    charts[id] = new Chart(ctx, {
-        type: 'line',
-        data: { labels, datasets: [{ data, borderColor: COLORS.cyan, backgroundColor: 'rgba(0, 210, 255, 0.1)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: COLORS.cyan, pointBorderColor: '#1E293B', pointBorderWidth: 2, pointRadius: 4 }] },
-        options: { responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: tooltipStyle() },
-            scales: { x: { ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: COLORS.textDim }, grid: { color: 'rgba(148,163,184,0.1)' } } } }
-    });
-}
-
-// ============ HELPERS DE UI ============
-function crearKPI(icono, clase, titulo, valor, sub) {
-    return `
-        <div class="kpi-card">
-            <div class="kpi-icon-circle ${clase}"><i class="fas ${icono}"></i></div>
-            <div class="kpi-content">
-                <span class="kpi-title">${titulo}</span>
-                <span class="kpi-main">${valor}</span>
-                <span class="kpi-trend trend-up">${sub}</span>
-            </div>
-        </div>
-    `;
-}
-
-function crearChart(id, icono, titulo, full = false) {
-    return `
-        <div class="chart-exec-card ${full ? 'chart-full' : ''}">
-            <div class="chart-exec-header">
-                <i class="fas ${icono} chart-icon"></i>
-                <h3>${titulo}</h3>
-            </div>
-            <canvas id="${id}"></canvas>
-        </div>
-    `;
-}
-
-function crearChartDonut(id, icono, titulo) {
-    return `
-        <div class="chart-exec-card">
-            <div class="chart-exec-header">
-                <i class="fas ${icono} chart-icon"></i>
-                <h3>${titulo}</h3>
-            </div>
-            <div class="chart-doughnut-wrapper">
-                <canvas id="${id}"></canvas>
-                <div class="chart-doughnut-center">
-                    <span class="center-value" id="centerTotal">0</span>
-                    <span class="center-label">TOTAL</span>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function crearChartProgress(id, icono, titulo) {
-    return `
-        <div class="chart-exec-card">
-            <div class="chart-exec-header">
-                <i class="fas ${icono} chart-icon"></i>
-                <h3>${titulo}</h3>
-            </div>
-            <div class="progress-list" id="${id}"></div>
-        </div>
-    `;
-}
-
-function crearChartTabla(icono, titulo) {
-    return `
-        <div class="chart-exec-card chart-full">
-            <div class="chart-exec-header">
-                <i class="fas ${icono} chart-icon"></i>
-                <h3>${titulo}</h3>
-            </div>
-            <div id="tablaResumen"></div>
-        </div>
-    `;
-}
-
-// ============================================================
-// DASHBOARD COMBUSTIBLE
-// ============================================================
-async function iniciarDashboardCombustible() {
-    await cargarTodo();
-
-    const noche = hojas['T. NOCHE DESPACHO'] || [];
-    const dia = hojas['T. DIA DESPACHO'] || [];
-    const abastCis = hojas['ABAST. DIESEL.CISTERNA'] || [];
-
-    const cGalNoche = col(noche, 'GALONES');
-    const cGalDia = col(dia, 'GALONES');
-
-    const totalNoche = noche.reduce((a, f) => a + num(f[cGalNoche]), 0);
-    const totalDia = dia.reduce((a, f) => a + num(f[cGalDia]), 0);
-    const totalGeneral = totalNoche + totalDia;
-
-    document.getElementById('kpiRow').innerHTML = `
-        ${crearKPI('fa-gas-pump', '', 'Galones Noche', totalNoche.toFixed(1), 'Despachados')}
-        ${crearKPI('fa-sun', 'icon-yellow', 'Galones Día', totalDia.toFixed(1), 'Despachados')}
-        ${crearKPI('fa-tint', 'icon-cyan', 'Total Galones', totalGeneral.toFixed(1), 'General')}
-        ${crearKPI('fa-truck', 'icon-green', 'Despachos Noche', noche.length, 'Registros')}
-        ${crearKPI('fa-truck-fast', 'icon-green', 'Despachos Día', dia.length, 'Registros')}
-        ${crearKPI('fa-database', 'icon-red', 'Abast. Cisterna', abastCis.length, 'Eventos')}
-    `;
-
-    document.getElementById('filtersRow').innerHTML = ``;
-
-    document.getElementById('chartsGrid').innerHTML = `
-        ${crearChart('chartComparativo', 'fa-chart-column', 'Comparativo Noche vs Día')}
-        ${crearChartDonut('chartCisternas', 'fa-database', 'Galones por Cisterna')}
-        ${crearChart('chartTopCamiones', 'fa-ranking-star', 'Top 10 Camiones por Galones')}
-        ${crearChart('chartConsumoCamion', 'fa-truck', 'Consumo por Camión (Noche)')}
-        ${crearChartProgress('progressCisternas', 'fa-gauge-high', 'Participación por Cisterna')}
-        ${crearChartTabla('fa-table', 'Detalle de Despachos (Noche)')}
-    `;
-
-    renderBar('chartComparativo', ['Turno Noche', 'Turno Día'], [totalNoche, totalDia], COLORS.accent);
-
-    const porCisterna = {};
-    [...noche, ...dia].forEach(f => {
-        const c = norm(f[col(noche, 'CISTERNA')] || f[col(dia, 'CISTERNA')]) || 'Sin cisterna';
-        porCisterna[c] = (porCisterna[c] || 0) + num(f[col(noche, 'GALONES')] || f[col(dia, 'GALONES')]);
-    });
-    renderDoughnut('chartCisternas', Object.keys(porCisterna), Object.values(porCisterna));
-
-    const porCamion = {};
-    [...noche, ...dia].forEach(f => {
-        const c = norm(f[col(noche, 'CAMION')] || f[col(dia, 'CAMION')]) || 'Sin camión';
-        porCamion[c] = (porCamion[c] || 0) + num(f[col(noche, 'GALONES')] || f[col(dia, 'GALONES')]);
-    });
-    const topCamiones = Object.entries(porCamion).sort((a, b) => b[1] - a[1]).slice(0, 10);
-    renderHBar('chartTopCamiones', topCamiones.map(t => t[0]), topCamiones.map(t => t[1]), COLORS.accent);
-
-    const nochePorCamion = {};
-    noche.forEach(f => {
-        const c = norm(f[col(noche, 'CAMION')]) || 'Sin camión';
-        nochePorCamion[c] = (nochePorCamion[c] || 0) + num(f[col(noche, 'GALONES')]);
-    });
-    const topNoche = Object.entries(nochePorCamion).sort((a, b) => b[1] - a[1]).slice(0, 12);
-    renderBar('chartConsumoCamion', topNoche.map(t => t[0]), topNoche.map(t => t[1]), COLORS.cyan);
-
-    const totalCis = Object.values(porCisterna).reduce((a, b) => a + b, 0);
-    const contCis = document.getElementById('progressCisternas');
-    contCis.innerHTML = '';
-    Object.entries(porCisterna).sort((a, b) => b[1] - a[1]).forEach(([cis, val]) => {
-        const pct = totalCis > 0 ? ((val / totalCis) * 100).toFixed(1) : 0;
-        contCis.innerHTML += `
-            <div class="progress-item">
-                <div class="progress-header">
-                    <span class="progress-label"><i class="fas fa-database"></i> ${cis}</span>
-                    <span class="progress-values"><span class="progress-percent">${pct}%</span><span class="progress-count">${val.toFixed(0)} gl</span></span>
-                </div>
-                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${pct}%"></div></div>
-            </div>
-        `;
-    });
-
-    const cFecha = col(noche, 'FECHA'), cCam = col(noche, 'CAMION'), cGal = col(noche, 'GALONES'), cCis = col(noche, 'CISTERNA'), cTurn = col(noche, 'TURNO');
-    let html = '<table><thead><tr><th>Fecha</th><th>Camión</th><th>Cisterna</th><th>Turno</th><th>Galones</th></tr></thead><tbody>';
-    noche.slice(0, 100).forEach(f => {
-        html += `<tr><td>${norm(f[cFecha]).split(' ')[0]}</td><td>${norm(f[cCam])}</td><td>${norm(f[cCis])}</td><td>${norm(f[cTurn])}</td><td>${num(f[cGal]).toFixed(2)}</td></tr>`;
-    });
-    html += '</tbody></table>';
-    document.getElementById('tablaResumen').innerHTML = html;
-
-    document.getElementById('centerTotal').textContent = totalGeneral.toFixed(0);
-}
-
-// ============================================================
-// DASHBOARD KILOMETRAJE
-// ============================================================
-async function iniciarDashboardKilometraje() {
-    await cargarTodo();
-
-    const km2107 = hojas['KILOMETRAJE 2107'] || [];
-    const km2248 = hojas['KILOMETRAJE 2248'] || [];
-    const operatividad = hojas['OPERATIVIDAD'] || [];
-
-    // DEBUG
-    console.log('=== KILOMETRAJE 2107 - Primera fila ===');
-    console.log(km2107[0]);
-    console.log('=== Claves ===');
-    console.log(km2107.length > 0 ? Object.keys(km2107[0]) : 'Sin datos');
-
-    // Buscar columnas por nombre (con búsqueda parcial por si tienen prefijo)
-    const cFecha = col(km2107, 'FECHA') || colParcial(km2107, 'fecha');
-    const cTurno = col(km2107, 'TURNO') || colParcial(km2107, 'turno');
-    const cKI = col(km2107, 'Kilometraje KI') || colParcial(km2107, 'KI');
-    const cKF = col(km2107, 'Kilometraje KF') || colParcial(km2107, 'KF');
-    const cHR = col(km2107, 'HR MOTOR ACUM.') || colParcial(km2107, 'HR MOTOR');
-    const cAdBlue = col(km2107, 'NIVEL DE ADBLUE') || colParcial(km2107, 'ADBLUE');
-
-    console.log('Columnas detectadas:', { cFecha, cTurno, cKI, cKF, cHR, cAdBlue });
-
-    // Calcular km
-    let totalKm2107 = 0;
-    km2107.forEach(f => {
-        const ki = num(f[cKI]);
-        const kf = num(f[cKF]);
-        const dif = kf - ki;
-        if (dif > 0 && dif < 500) totalKm2107 += dif;
-    });
-
-    let totalKm2248 = 0;
-    const cFecha2 = col(km2248, 'FECHA') || colParcial(km2248, 'fecha');
-    const cTurno2 = col(km2248, 'TURNO') || colParcial(km2248, 'turno');
-    const cKI2 = col(km2248, 'Kilometraje KI') || colParcial(km2248, 'KI');
-    const cKF2 = col(km2248, 'Kilometraje KF') || colParcial(km2248, 'KF');
-    const cHR2 = col(km2248, 'HR MOTOR ACUM.') || colParcial(km2248, 'HR MOTOR');
-    const cAdBlue2 = col(km2248, 'NIVEL DE ADBLUE') || colParcial(km2248, 'ADBLUE');
-
-    km2248.forEach(f => {
-        const ki = num(f[cKI2]);
-        const kf = num(f[cKF2]);
-        const dif = kf - ki;
-        if (dif > 0 && dif < 500) totalKm2248 += dif;
+    dataGlobal.forEach(f => {
+        totalIng += num(f[cIngresada]);
+        totalUsa += num(f[cUsada]);
+        totalStock += num(f[cStock]);
+        totalCosto += num(f[cCostoTotal]);
+        if (f[cMateria]) materias.add(norm(f[cMateria]));
+        if (f[cArea]) areas.add(norm(f[cArea]));
     });
 
     document.getElementById('kpiRow').innerHTML = `
-        ${crearKPI('fa-road', '', 'Km 2107', totalKm2107.toFixed(0), 'Recorridos')}
-        ${crearKPI('fa-road', 'icon-cyan', 'Km 2248', totalKm2248.toFixed(0), 'Recorridos')}
-        ${crearKPI('fa-tachometer-alt', 'icon-green', 'Total Km', (totalKm2107 + totalKm2248).toFixed(0), 'Flota')}
-        ${crearKPI('fa-clock', 'icon-yellow', 'Registros 2107', km2107.length, 'Eventos')}
-        ${crearKPI('fa-clock', 'icon-yellow', 'Registros 2248', km2248.length, 'Eventos')}
-        ${crearKPI('fa-truck', 'icon-red', 'Operatividad', operatividad.length, 'Días')}
+        <div class="kpi-card"><div class="kpi-icon-circle"><i class="fas fa-boxes-stacked"></i></div>
+            <div class="kpi-content"><span class="kpi-title">Ingresado</span><span class="kpi-main">${totalIng.toFixed(0)}</span><span class="kpi-trend trend-up">Unidades</span></div></div>
+        <div class="kpi-card"><div class="kpi-icon-circle icon-cyan"><i class="fas fa-industry"></i></div>
+            <div class="kpi-content"><span class="kpi-title">Usado</span><span class="kpi-main">${totalUsa.toFixed(0)}</span><span class="kpi-trend trend-up">Unidades</span></div></div>
+        <div class="kpi-card"><div class="kpi-icon-circle icon-green"><i class="fas fa-warehouse"></i></div>
+            <div class="kpi-content"><span class="kpi-title">Stock Actual</span><span class="kpi-main">${totalStock.toFixed(0)}</span><span class="kpi-trend trend-up">Disponible</span></div></div>
+        <div class="kpi-card"><div class="kpi-icon-circle icon-yellow"><i class="fas fa-coins"></i></div>
+            <div class="kpi-content"><span class="kpi-title">Costo Total</span><span class="kpi-main">${money(totalCosto)}</span><span class="kpi-trend trend-up">Acumulado</span></div></div>
+        <div class="kpi-card"><div class="kpi-icon-circle icon-orange"><i class="fas fa-lemon"></i></div>
+            <div class="kpi-content"><span class="kpi-title">Materias</span><span class="kpi-main">${materias.size}</span><span class="kpi-trend trend-up">Tipos</span></div></div>
+        <div class="kpi-card"><div class="kpi-icon-circle icon-red"><i class="fas fa-map-marker-alt"></i></div>
+            <div class="kpi-content"><span class="kpi-title">Áreas</span><span class="kpi-main">${areas.size}</span><span class="kpi-trend trend-up">Destinos</span></div></div>
     `;
 
-    document.getElementById('filtersRow').innerHTML = ``;
+    document.getElementById('centerTotal').textContent = totalCosto.toFixed(0);
+    document.getElementById('centerTotalArea').textContent = totalStock.toFixed(0);
+}
 
-    document.getElementById('chartsGrid').innerHTML = `
-        ${crearChart('chartComparativoKm', 'fa-chart-column', 'Km Recorridos por Cisterna')}
-        ${crearChartDonut('chartTurnos', 'fa-clock', 'Distribución por Turno (2107)')}
-        ${crearChart('chartKm2107', 'fa-chart-line', 'Evolución Diaria Km 2107')}
-        ${crearChart('chartKm2248', 'fa-chart-line', 'Evolución Diaria Km 2248')}
-        ${crearChart('chartHoras', 'fa-tachometer-alt', 'Horas Motor Acumuladas')}
-        ${crearChart('chartAdblue', 'fa-tint', 'Nivel AdBlue por Turno')}
-        ${crearChartProgress('progressOperatividad', 'fa-check-circle', 'Operatividad por Unidad')}
-        ${crearChartTabla('fa-table', 'Detalle 2107')}
-    `;
+// ============ FILTROS ============
+function cargarFiltros() {
+    llenar('filterMateria', 'Materia Prima');
+    llenar('filterArea', 'Área Destino');
+    llenar('filterProveedor', 'Proveedor');
+}
 
-    renderBar('chartComparativoKm', ['2107', '2248'], [totalKm2107, totalKm2248], COLORS.accent);
-
-    const porTurno = {};
-    km2107.forEach(f => {
-        const t = norm(f[cTurno]) || 'Sin turno';
-        porTurno[t] = (porTurno[t] || 0) + 1;
+function llenar(id, columna) {
+    const select = document.getElementById(id);
+    if (!select) return;
+    const c = col(columna);
+    if (!c) return;
+    const valores = [...new Set(dataGlobal.map(f => norm(f[c])).filter(v => v !== ''))];
+    select.innerHTML = `<option value="">${columna}</option>`;
+    valores.sort().forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        select.appendChild(opt);
     });
-    renderDoughnut('chartTurnos', Object.keys(porTurno), Object.values(porTurno));
+}
 
-    const kmPorDia2107 = {};
-    km2107.forEach(f => {
-        const fecha = fechaCorta(norm(f[cFecha]));
-        const ki = num(f[cKI]);
-        const kf = num(f[cKF]);
-        const dif = kf - ki;
-        if (fecha && dif > 0 && dif < 500) kmPorDia2107[fecha] = (kmPorDia2107[fecha] || 0) + dif;
-    });
-    renderLine('chartKm2107', Object.keys(kmPorDia2107), Object.values(kmPorDia2107));
+function aplicarFiltros() {
+    const m = document.getElementById('filterMateria').value;
+    const a = document.getElementById('filterArea').value;
+    const p = document.getElementById('filterProveedor').value;
 
-    const kmPorDia2248 = {};
-    km2248.forEach(f => {
-        const fecha = fechaCorta(norm(f[cFecha2]));
-        const ki = num(f[cKI2]);
-        const kf = num(f[cKF2]);
-        const dif = kf - ki;
-        if (fecha && dif > 0 && dif < 500) kmPorDia2248[fecha] = (kmPorDia2248[fecha] || 0) + dif;
-    });
-    renderLine('chartKm2248', Object.keys(kmPorDia2248), Object.values(kmPorDia2248));
+    const cM = col('Materia Prima'), cA = col('Área Destino'), cP = col('Proveedor');
 
-    const ultimo2107 = km2107.length > 0 ? num(km2107[km2107.length - 1][cHR]) : 0;
-    const ultimo2248 = km2248.length > 0 ? num(km2248[km2248.length - 1][cHR2]) : 0;
-    renderBar('chartHoras', ['2107', '2248'], [ultimo2107, ultimo2248], COLORS.cyan);
-
-    const adblueData2107 = km2107.slice(0, 30).map(f => num(f[cAdBlue]) * 100);
-    const fechas2107 = km2107.slice(0, 30).map(f => fechaCorta(norm(f[cFecha])));
-    renderLine('chartAdblue', fechas2107, adblueData2107);
-
-    const cont = document.getElementById('progressOperatividad');
-    cont.innerHTML = '';
-    const unidades = ['CJW-817', 'CJU-888', 'BVC-938', 'X6F-783', 'X5Y-834'];
-    unidades.forEach(u => {
-        cont.innerHTML += `
-            <div class="progress-item">
-                <div class="progress-header">
-                    <span class="progress-label"><i class="fas fa-truck"></i> ${u}</span>
-                    <span class="progress-values"><span class="progress-percent">100%</span><span class="progress-count">Operativo</span></span>
-                </div>
-                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 100%"></div></div>
-            </div>
-        `;
+    const filt = dataGlobal.filter(f => {
+        if (m && norm(f[cM]) !== m) return false;
+        if (a && norm(f[cA]) !== a) return false;
+        if (p && norm(f[cP]) !== p) return false;
+        return true;
     });
 
-    let html = '<table><thead><tr><th>Fecha</th><th>Turno</th><th>KI</th><th>KF</th><th>Km</th><th>Hr Motor</th><th>AdBlue</th></tr></thead><tbody>';
-    km2107.slice(0, 100).forEach(f => {
-        const ki = num(f[cKI]);
-        const kf = num(f[cKF]);
-        const dif = kf - ki;
+    const backup = dataGlobal;
+    dataGlobal = filt;
+    calcularKPIs();
+    crearGraficos();
+    crearTablaResumen();
+    dataGlobal = backup;
+}
+
+// ============ GRÁFICOS ============
+function crearGraficos() {
+    const cFecha = col('Fecha');
+    const cMateria = col('Materia Prima');
+    const cIngresada = col('Cantidad Ingresada');
+    const cUsada = col('Cantidad Usada');
+    const cStock = col('Stock Actual');
+    const cProveedor = col('Proveedor');
+    const cCostoTotal = col('Costo Total (S/)') || col('Costo Total');
+    const cArea = col('Área Destino');
+
+    // 1. Evolución de ingreso de limón por fecha
+    const porFecha = {};
+    dataGlobal.filter(f => norm(f[cMateria]).toLowerCase().includes('limón') || norm(f[cMateria]).toLowerCase().includes('limon'))
+        .forEach(f => {
+            const fecha = norm(f[cFecha]);
+            porFecha[fecha] = (porFecha[fecha] || 0) + num(f[cIngresada]);
+        });
+    const fechasOrdenadas = Object.keys(porFecha).sort((a, b) => {
+        const [da, ma, ya] = a.split('/');
+        const [db, mb, yb] = b.split('/');
+        return new Date(ya, ma - 1, da) - new Date(yb, mb - 1, db);
+    });
+    renderLine('chartEvolucion', fechasOrdenadas, fechasOrdenadas.map(f => porFecha[f]));
+
+    // 2. Uso vs Stock por materia prima
+    const porMateriaUso = {}, porMateriaStock = {};
+    dataGlobal.forEach(f => {
+        const m = norm(f[cMateria]);
+        if (!m) return;
+        porMateriaUso[m] = (porMateriaUso[m] || 0) + num(f[cUsada]);
+        porMateriaStock[m] = (porMateriaStock[m] || 0) + num(f[cStock]);
+    });
+    renderGrouped('chartUsoStock', Object.keys(porMateriaUso), Object.values(porMateriaUso), Object.values(porMateriaStock));
+
+    // 3. Distribución de costos por materia prima
+    const porMateriaCosto = {};
+    dataGlobal.forEach(f => {
+        const m = norm(f[cMateria]);
+        if (!m) return;
+        porMateriaCosto[m] = (porMateriaCosto[m] || 0) + num(f[cCostoTotal]);
+    });
+    renderDoughnut('chartCostos', Object.keys(porMateriaCosto), Object.values(porMateriaCosto));
+
+    // 4. Rendimiento: limón → jugo + aceite + cáscara
+    const rendimiento = {};
+    dataGlobal.forEach(f => {
+        const fecha = norm(f[cFecha]);
+        const materia = norm(f[cMateria]).toLowerCase();
+        if (!rendimiento[fecha]) rendimiento[fecha] = { jugo: 0, aceite: 0, cascara: 0 };
+        if (materia.includes('jugo')) rendimiento[fecha].jugo += num(f[cIngresada]);
+        if (materia.includes('aceite')) rendimiento[fecha].aceite += num(f[cIngresada]);
+        if (materia.includes('cáscara') || materia.includes('cascara')) rendimiento[fecha].cascara += num(f[cIngresada]);
+    });
+    const fechasRend = Object.keys(rendimiento).sort((a, b) => {
+        const [da, ma, ya] = a.split('/');
+        const [db, mb, yb] = b.split('/');
+        return new Date(ya, ma - 1, da) - new Date(yb, mb - 1, db);
+    });
+    renderStacked('chartRendimiento', fechasRend, [
+        { label: 'Jugo', data: fechasRend.map(f => rendimiento[f].jugo), backgroundColor: COLORS.accent, borderRadius: 4 },
+        { label: 'Aceite', data: fechasRend.map(f => rendimiento[f].aceite), backgroundColor: COLORS.cyan, borderRadius: 4 },
+        { label: 'Cáscara', data: fechasRend.map(f => rendimiento[f].cascara), backgroundColor: COLORS.green, borderRadius: 4 }
+    ]);
+
+    // 5. Costo total por proveedor
+    const porProveedor = {};
+    dataGlobal.forEach(f => {
+        const p = norm(f[cProveedor]) || 'Sin proveedor';
+        porProveedor[p] = (porProveedor[p] || 0) + num(f[cCostoTotal]);
+    });
+    const proveedoresOrdenados = Object.entries(porProveedor).sort((a, b) => b[1] - a[1]);
+    renderHBar('chartProveedor', proveedoresOrdenados.map(p => p[0]), proveedoresOrdenados.map(p => p[1]), COLORS.accent);
+
+    // 6. Stock actual por área destino
+    const porArea = {};
+    dataGlobal.forEach(f => {
+        const a = norm(f[cArea]) || 'Sin área';
+        porArea[a] = (porArea[a] || 0) + num(f[cStock]);
+    });
+    renderDoughnut('chartArea', Object.keys(porArea), Object.values(porArea));
+}
+
+// ============ TABLA ============
+function crearTablaResumen() {
+    const cFecha = col('Fecha');
+    const cMateria = col('Materia Prima');
+    const cUnidad = col('Unidad');
+    const cIngresada = col('Cantidad Ingresada');
+    const cUsada = col('Cantidad Usada');
+    const cStock = col('Stock Actual');
+    const cProveedor = col('Proveedor');
+    const cCostoUnit = col('Costo Unitario (S/)') || col('Costo Unitario');
+    const cCostoTotal = col('Costo Total (S/)') || col('Costo Total');
+    const cArea = col('Área Destino');
+
+    let html = '<table><thead><tr>';
+    html += '<th>Fecha</th><th>Materia</th><th>Unidad</th><th>Ingresado</th><th>Usado</th><th>Stock</th><th>Proveedor</th><th>Costo Unit.</th><th>Costo Total</th><th>Área</th>';
+    html += '</tr></thead><tbody>';
+
+    dataGlobal.forEach(f => {
         html += `<tr>
-            <td>${norm(f[cFecha]).split(' ')[0]}</td>
-            <td>${norm(f[cTurno])}</td>
-            <td>${ki}</td>
-            <td>${kf}</td>
-            <td>${dif > 0 && dif < 500 ? dif.toFixed(0) : 0}</td>
-            <td>${num(f[cHR])}</td>
-            <td>${(num(f[cAdBlue]) * 100).toFixed(0)}%</td>
+            <td>${norm(f[cFecha])}</td>
+            <td>${norm(f[cMateria])}</td>
+            <td>${norm(f[cUnidad])}</td>
+            <td>${num(f[cIngresada])}</td>
+            <td>${num(f[cUsada])}</td>
+            <td>${num(f[cStock])}</td>
+            <td>${norm(f[cProveedor])}</td>
+            <td>${money(num(f[cCostoUnit]))}</td>
+            <td>${money(num(f[cCostoTotal]))}</td>
+            <td>${norm(f[cArea])}</td>
         </tr>`;
     });
+
     html += '</tbody></table>';
     document.getElementById('tablaResumen').innerHTML = html;
-
-    document.getElementById('centerTotal').textContent = (totalKm2107 + totalKm2248).toFixed(0);
 }
 
-// ============================================================
-// DASHBOARD MANO DE OBRA
-// ============================================================
-async function iniciarDashboardHH() {
-    await cargarTodo();
+// ============ LIMPIAR ============
+document.getElementById('clearFilters')?.addEventListener('click', () => {
+    document.querySelectorAll('.filter-select').forEach(sel => sel.value = '');
+    aplicarFiltros();
+});
 
-    document.getElementById('kpiRow').innerHTML = `
-        ${crearKPI('fa-users', '', 'Total Personal', '44', 'Directo')}
-        ${crearKPI('fa-user-tie', 'icon-cyan', 'Indirecto', '33', 'Personal')}
-        ${crearKPI('fa-clock', 'icon-green', 'HH Directa', '44', 'Del informe')}
-        ${crearKPI('fa-clock', 'icon-yellow', 'HH Indirecta', '33', 'Del informe')}
-        ${crearKPI('fa-calendar-check', 'icon-green', 'Días Libres', '5', 'Promedio')}
-        ${crearKPI('fa-user-md', 'icon-red', 'Descansos', '0', 'Médicos')}
-    `;
-
-    document.getElementById('filtersRow').innerHTML = ``;
-
-    document.getElementById('chartsGrid').innerHTML = `
-        ${crearChart('chartDirectoIndirecto', 'fa-chart-column', 'Personal Directo vs Indirecto')}
-        ${crearChartDonut('chartDistribucion', 'fa-users', 'Distribución por Cargo')}
-        ${crearChart('chartHH', 'fa-clock', 'HH por Cargo')}
-        ${crearChart('chartAsistencia', 'fa-calendar-check', 'Asistencia (Contratado vs Obra)')}
-        ${crearChartProgress('progressPersonal', 'fa-gauge-high', 'Resumen de Personal')}
-        ${crearChartTabla('fa-table', 'Detalle de Personal')}
-    `;
-
-    renderBar('chartDirectoIndirecto', ['Directo', 'Indirecto'], [44, 33], COLORS.accent);
-    renderDoughnut('chartDistribucion', ['Conductor', 'Auxiliar', 'Supervisor', 'Admin', 'Gerencia'], [6, 3, 3, 1, 1]);
-    renderBar('chartHH', ['Conductor', 'Auxiliar', 'Supervisor', 'Gerencia'], [22, 11, 11, 8], COLORS.cyan);
-    renderBar('chartAsistencia', ['Contratado', 'En Obra'], [12, 5], COLORS.green);
-
-    const cont = document.getElementById('progressPersonal');
-    cont.innerHTML = `
-        <div class="progress-item">
-            <div class="progress-header">
-                <span class="progress-label"><i class="fas fa-user"></i> Directo</span>
-                <span class="progress-values"><span class="progress-percent">57%</span><span class="progress-count">44 HH</span></span>
-            </div>
-            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 57%"></div></div>
-        </div>
-        <div class="progress-item">
-            <div class="progress-header">
-                <span class="progress-label"><i class="fas fa-user-tie"></i> Indirecto</span>
-                <span class="progress-values"><span class="progress-percent">43%</span><span class="progress-count">33 HH</span></span>
-            </div>
-            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 43%"></div></div>
-        </div>
-    `;
-
-    document.getElementById('tablaResumen').innerHTML = '<p style="color:#94a3b8;padding:20px;">Reporte Daily Report de Mano de Obra · Consultar detalle en la hoja HH SETIEMBRE.</p>';
-    document.getElementById('centerTotal').textContent = '77';
-}
+cargarDatos();

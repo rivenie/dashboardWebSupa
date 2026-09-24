@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Smartlab - Análisis de Aceites</title>
+    <title>Dashboard Materia Prima - Limón</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/dashboard.css">
@@ -21,10 +21,10 @@
 
         <header class="exec-header">
             <div class="exec-title">
-                <div class="exec-logo"><i class="fas fa-flask"></i></div>
+                <div class="exec-logo"><i class="fas fa-lemon"></i></div>
                 <div>
-                    <h1>Dashboard Smartlab</h1>
-                    <span class="exec-subtitle" id="sheetName">Análisis de Aceites · Diagnóstico de Equipos</span>
+                    <h1>Materia Prima - Limón</h1>
+                    <span class="exec-subtitle" id="sheetName">Control de ingresos, uso y costos</span>
                 </div>
             </div>
             <div class="exec-actions">
@@ -35,211 +35,92 @@
             </div>
         </header>
 
-        <!-- KPIs -->
-        <section class="kpi-row">
-            <div class="kpi-card">
-                <div class="kpi-icon-circle"><i class="fas fa-vials"></i></div>
-                <div class="kpi-content">
-                    <span class="kpi-title">Total Muestras</span>
-                    <span class="kpi-main" id="kpiTotal">0</span>
-                    <span class="kpi-trend trend-up">Registradas</span>
-                </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-icon-circle icon-red"><i class="fas fa-exclamation-triangle"></i></div>
-                <div class="kpi-content">
-                    <span class="kpi-title">En Alerta</span>
-                    <span class="kpi-main" id="kpiAlerta">0</span>
-                    <span class="kpi-trend trend-down"><i class="fas fa-arrow-down"></i> Crítico</span>
-                </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-icon-circle icon-orange"><i class="fas fa-exclamation-circle"></i></div>
-                <div class="kpi-content">
-                    <span class="kpi-title">Precaución</span>
-                    <span class="kpi-main" id="kpiPrecaucion">0</span>
-                    <span class="kpi-trend trend-down">Vigilar</span>
-                </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-icon-circle icon-green"><i class="fas fa-check-circle"></i></div>
-                <div class="kpi-content">
-                    <span class="kpi-title">Normales</span>
-                    <span class="kpi-main" id="kpiNormal">0</span>
-                    <span class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> OK</span>
-                </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-icon-circle icon-cyan"><i class="fas fa-tractor"></i></div>
-                <div class="kpi-content">
-                    <span class="kpi-title">Flotas</span>
-                    <span class="kpi-main" id="kpiFlotas">0</span>
-                    <span class="kpi-trend trend-up">Activas</span>
-                </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-icon-circle icon-orange"><i class="fas fa-cogs"></i></div>
-                <div class="kpi-content">
-                    <span class="kpi-title">Componentes</span>
-                    <span class="kpi-main" id="kpiComponentes">0</span>
-                    <span class="kpi-trend trend-up">Analizados</span>
-                </div>
-            </div>
-        </section>
+        <section class="kpi-row" id="kpiRow"></section>
 
-        <!-- Filtros -->
         <section class="filters-row">
             <div class="filter-chip">
-                <i class="fas fa-tractor"></i>
-                <select id="filterFlota" class="filter-select"><option value="">Flota</option></select>
+                <i class="fas fa-lemon"></i>
+                <select id="filterMateria" class="filter-select"><option value="">Materia Prima</option></select>
             </div>
             <div class="filter-chip">
-                <i class="fas fa-industry"></i>
-                <select id="filterFabricante" class="filter-select"><option value="">Fabricante</option></select>
+                <i class="fas fa-map-marker-alt"></i>
+                <select id="filterArea" class="filter-select"><option value="">Área Destino</option></select>
             </div>
             <div class="filter-chip">
-                <i class="fas fa-cog"></i>
-                <select id="filterComponente" class="filter-select"><option value="">Componente</option></select>
-            </div>
-            <div class="filter-chip">
-                <i class="fas fa-layer-group"></i>
-                <select id="filterClase" class="filter-select"><option value="">Clase Componente</option></select>
-            </div>
-            <div class="filter-chip">
-                <i class="fas fa-circle"></i>
-                <select id="filterStatus" class="filter-select"><option value="">Status Final</option></select>
-            </div>
-            <div class="filter-chip">
-                <i class="fas fa-heartbeat"></i>
-                <select id="filterSalud" class="filter-select"><option value="">Status Salud</option></select>
+                <i class="fas fa-truck"></i>
+                <select id="filterProveedor" class="filter-select"><option value="">Proveedor</option></select>
             </div>
             <button id="clearFilters" class="btn-clear-chips">
                 <i class="fas fa-eraser"></i> Limpiar
             </button>
         </section>
 
-        <!-- Gráficos -->
-        <section class="charts-exec">
+        <section class="charts-exec" id="chartsGrid">
 
-            <!-- 1. Distribución de Status Final -->
+            <div class="chart-exec-card chart-full">
+                <div class="chart-exec-header">
+                    <i class="fas fa-arrow-trend-up chart-icon"></i>
+                    <h3>Evolución de Ingreso de Limón por Fecha</h3>
+                </div>
+                <canvas id="chartEvolucion"></canvas>
+            </div>
+
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-chart-pie chart-icon"></i>
-                    <h3>Distribución de Status Final</h3>
+                    <i class="fas fa-chart-column chart-icon"></i>
+                    <h3>Uso vs Stock por Materia Prima</h3>
+                </div>
+                <canvas id="chartUsoStock"></canvas>
+            </div>
+
+            <div class="chart-exec-card">
+                <div class="chart-exec-header">
+                    <i class="fas fa-coins chart-icon"></i>
+                    <h3>Distribución de Costos por Materia Prima</h3>
                 </div>
                 <div class="chart-doughnut-wrapper">
-                    <canvas id="chartStatusFinal"></canvas>
+                    <canvas id="chartCostos"></canvas>
                     <div class="chart-doughnut-center">
                         <span class="center-value" id="centerTotal">0</span>
-                        <span class="center-label">MUESTRAS</span>
+                        <span class="center-label">S/ TOTAL</span>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. Equipos con Alerta/Precaución por tipo de equipo -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-tractor chart-icon"></i>
-                    <h3>Alertas por Tipo de Equipo</h3>
+                    <i class="fas fa-layer-group chart-icon"></i>
+                    <h3>Rendimiento: Limón → Jugo + Aceite + Cáscara</h3>
                 </div>
-                <canvas id="chartAlertasTipo"></canvas>
+                <canvas id="chartRendimiento"></canvas>
             </div>
 
-            <!-- 3. Componentes con más alertas por desgaste -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-cogs chart-icon"></i>
-                    <h3>Componentes con Más Alertas de Desgaste</h3>
+                    <i class="fas fa-truck chart-icon"></i>
+                    <h3>Costo Total por Proveedor</h3>
                 </div>
-                <canvas id="chartAlertasDesgaste"></canvas>
+                <canvas id="chartProveedor"></canvas>
             </div>
 
-            <!-- 4. Evolución de alertas por mes -->
             <div class="chart-exec-card">
                 <div class="chart-exec-header">
-                    <i class="fas fa-chart-line chart-icon"></i>
-                    <h3>Evolución de Alertas por Mes</h3>
+                    <i class="fas fa-map-marker-alt chart-icon"></i>
+                    <h3>Stock Actual por Área Destino</h3>
                 </div>
-                <canvas id="chartEvolucionMes"></canvas>
+                <div class="chart-doughnut-wrapper">
+                    <canvas id="chartArea"></canvas>
+                    <div class="chart-doughnut-center">
+                        <span class="center-value" id="centerTotalArea">0</span>
+                        <span class="center-label">STOCK</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- 5. Top equipos con mayor hierro -->
-            <div class="chart-exec-card">
-                <div class="chart-exec-header">
-                    <i class="fas fa-ranking-star chart-icon"></i>
-                    <h3>Top 10 Equipos con Mayor Hierro (Fe)</h3>
-                </div>
-                <canvas id="chartTopHierro"></canvas>
-            </div>
-
-            <!-- 6. Contaminación: equipos con agua -->
-            <div class="chart-exec-card">
-                <div class="chart-exec-header">
-                    <i class="fas fa-tint chart-icon"></i>
-                    <h3>Equipos con Presencia de Agua</h3>
-                </div>
-                <canvas id="chartAgua"></canvas>
-            </div>
-
-            <!-- 7. Alertas por viscosidad -->
-            <div class="chart-exec-card">
-                <div class="chart-exec-header">
-                    <i class="fas fa-oil-can chart-icon"></i>
-                    <h3>Alertas por Viscosidad Fuera de Rango</h3>
-                </div>
-                <canvas id="chartViscosidad"></canvas>
-            </div>
-
-            <!-- 8. Comparativo por fabricante -->
-            <div class="chart-exec-card">
-                <div class="chart-exec-header">
-                    <i class="fas fa-industry chart-icon"></i>
-                    <h3>Status por Fabricante</h3>
-                </div>
-                <canvas id="chartFabricante"></canvas>
-            </div>
-
-            <!-- 9. Horas aceite vs horas equipo -->
-            <div class="chart-exec-card">
-                <div class="chart-exec-header">
-                    <i class="fas fa-clock chart-icon"></i>
-                    <h3>Horas Aceite vs Horas Equipo por Componente</h3>
-                </div>
-                <canvas id="chartHoras"></canvas>
-            </div>
-
-            <!-- 10. Ranking de componentes con más desgaste -->
-            <div class="chart-exec-card">
-                <div class="chart-exec-header">
-                    <i class="fas fa-ranking-star chart-icon"></i>
-                    <h3>Ranking de Componentes con Más Desgaste</h3>
-                </div>
-                <div class="progress-list" id="progressComponentes"></div>
-            </div>
-
-            <!-- 11. Metales de desgaste (comparativa) -->
-            <div class="chart-exec-card">
-                <div class="chart-exec-header">
-                    <i class="fas fa-atom chart-icon"></i>
-                    <h3>Metales de Desgaste - Top Equipos</h3>
-                </div>
-                <canvas id="chartMetales"></canvas>
-            </div>
-
-            <!-- 12. Contaminación general -->
-            <div class="chart-exec-card">
-                <div class="chart-exec-header">
-                    <i class="fas fa-biohazard chart-icon"></i>
-                    <h3>Contaminación por Silicio y Sodio</h3>
-                </div>
-                <canvas id="chartContaminacion"></canvas>
-            </div>
-
-            <!-- Tabla resumen -->
             <div class="chart-exec-card chart-full">
                 <div class="chart-exec-header">
                     <i class="fas fa-table chart-icon"></i>
-                    <h3>Detalle de Análisis</h3>
+                    <h3>Detalle de Movimientos</h3>
                 </div>
                 <div id="tablaResumen"></div>
             </div>
