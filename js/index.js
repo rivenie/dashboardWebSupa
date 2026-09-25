@@ -13,7 +13,7 @@ const mensaje = document.getElementById('mensaje');
 
 // ============ CONFIGURACIÓN POR HOJA ============
 const HOJAS_CONFIG = {
-    'Hoja1': { headerRow: null, subHeaderRow: null, keywords: ['FECHA_TRANSACCION', 'PEDIDO', 'COUNTRY'] }
+    'BD': { headerRow: null, subHeaderRow: null, keywords: ['FECHA_TRANSACCION', 'PEDIDO', 'COUNTRY'] }
 };
 
 fileInput.addEventListener('change', function (e) {
