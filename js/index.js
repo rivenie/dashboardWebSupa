@@ -11,10 +11,9 @@ const sheetList = document.getElementById('sheetList');
 const btnSubir = document.getElementById('btnSubir');
 const mensaje = document.getElementById('mensaje');
 
-// ============ CONFIGURACIÓN DE ENCABEZADOS POR HOJA ============
+// ============ CONFIGURACIÓN POR HOJA ============
 const HOJAS_CONFIG = {
-    'Hoja 1': { headerRow: null, subHeaderRow: null, keywords: ['Fecha', 'Materia', 'Proveedor', 'Costo'] },
-    'MATERIA PRIMA': { headerRow: null, subHeaderRow: null, keywords: ['Fecha', 'Materia', 'Proveedor'] }
+    'Hoja1': { headerRow: null, subHeaderRow: null, keywords: ['FECHA_TRANSACCION', 'PEDIDO', 'COUNTRY'] }
 };
 
 fileInput.addEventListener('change', function (e) {
@@ -38,7 +37,7 @@ fileInput.addEventListener('change', function (e) {
         });
 
         sheetStatus.style.display = 'block';
-        mostrarMensaje('Excel cargado. Revisa las hojas y haz clic en Subir.', 'ok');
+        mostrarMensaje('Excel cargado. Haz clic en Subir.', 'ok');
     };
     reader.readAsArrayBuffer(file);
 });
@@ -47,7 +46,7 @@ function procesarHoja(nombreHoja, worksheet) {
     const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false });
     if (rows.length === 0) return [];
 
-    const config = HOJAS_CONFIG[nombreHoja] || { headerRow: null, subHeaderRow: null, keywords: ['Fecha'] };
+    const config = HOJAS_CONFIG[nombreHoja] || { headerRow: null, subHeaderRow: null, keywords: ['FECHA'] };
 
     let headerIndex;
     let subHeaderIndex = null;
@@ -56,10 +55,10 @@ function procesarHoja(nombreHoja, worksheet) {
         headerIndex = config.headerRow;
         subHeaderIndex = config.subHeaderRow;
     } else {
-        const keywords = config.keywords || ['Fecha'];
+        const keywords = config.keywords || ['FECHA'];
         let mejorMatch = 0;
         headerIndex = 0;
-        for (let i = 0; i < Math.min(rows.length, 15); i++) {
+        for (let i = 0; i < Math.min(rows.length, 20); i++) {
             const fila = rows[i].map(c => (c || '').toString().trim().toLowerCase());
             let matches = 0;
             keywords.forEach(kw => {
@@ -76,6 +75,7 @@ function procesarHoja(nombreHoja, worksheet) {
     let headersFinales = [];
     let dataStart = headerIndex + 1;
 
+    // TÉCNICA DE DOBLE FILA
     if (subHeaderIndex !== null && subHeaderIndex !== undefined) {
         const fila2 = rows[subHeaderIndex] || [];
         headersFinales = combinarHeaders(fila1, fila2);
@@ -109,7 +109,7 @@ function procesarHoja(nombreHoja, worksheet) {
     }).filter(f => Object.values(f).some(v => v !== undefined && v !== null && v !== ''));
 }
 
-// ============ TÉCNICA DE DOBLE FILA ============
+// TÉCNICA DE DOBLE FILA
 function combinarHeaders(fila1, fila2) {
     const maxLen = Math.max(fila1.length, fila2.length);
     const headers = [];
@@ -122,14 +122,9 @@ function combinarHeaders(fila1, fila2) {
         if (v1 !== '') ultimoFila1 = v1;
 
         let resultado = '';
-
-        if (v1 !== '' && v2 !== '') {
-            resultado = `${v1} ${v2}`;
-        } else if (v1 !== '') {
-            resultado = v1;
-        } else if (v2 !== '') {
-            resultado = ultimoFila1 ? `${ultimoFila1} ${v2}` : v2;
-        }
+        if (v1 !== '' && v2 !== '') resultado = v1 === v2 ? v1 : `${v1} ${v2}`;
+        else if (v1 !== '') resultado = v1;
+        else if (v2 !== '') resultado = ultimoFila1 ? `${ultimoFila1} ${v2}` : v2;
 
         headers.push(resultado);
     }
@@ -155,13 +150,10 @@ btnSubir.addEventListener('click', async function () {
             data: data
         }));
 
-        const { error } = await supabaseClient
-            .from('dashboard_data')
-            .insert(registros);
-
+        const { error } = await supabaseClient.from('dashboard_data').insert(registros);
         if (error) throw error;
 
-        mostrarMensaje('✅ Datos subidos correctamente. El dashboard ya está actualizado.', 'ok');
+        mostrarMensaje('✅ Datos subidos correctamente.', 'ok');
     } catch (err) {
         console.error(err);
         mostrarMensaje('❌ Error: ' + err.message, 'error');

@@ -5,12 +5,20 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let dataGlobal = [];
 let charts = {};
 
+// PALETA AZUL
 const COLORS = {
-    accent: '#FF6B00', cyan: '#00D2FF', blue: '#2563EB', purple: '#8B5CF6',
-    green: '#10B981', greenNeon: '#00E676', red: '#EF4444', yellow: '#FBBF24',
-    gray: '#475569', textDim: '#94A3B8'
+    primary: '#3A82C8',
+    primaryLight: '#A6CAEC',
+    primaryDark: '#156082',
+    green: '#397940',
+    orange: '#F26F2B',
+    textDim: '#5A7A8F'
 };
-const PALETTE = [COLORS.accent, COLORS.cyan, COLORS.blue, COLORS.purple, COLORS.green, COLORS.yellow, COLORS.red, COLORS.greenNeon];
+
+// Para gráficos de anillo (colores diferenciados)
+const PALETTE_DONUT = [COLORS.primary, COLORS.primaryLight, COLORS.primaryDark, COLORS.green, COLORS.orange];
+// Para gráficos de barra/línea
+const PALETTE_BAR = [COLORS.primary, COLORS.primaryLight, COLORS.primaryDark, COLORS.green, COLORS.orange];
 
 document.getElementById('fechaActual').textContent = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' });
 
@@ -35,16 +43,17 @@ async function cargarDatos() {
         calcularKPIs();
         cargarFiltros();
         crearGraficos();
-        crearTablaResumen();
+        crearTablas();
 
-        document.querySelectorAll('.filter-select').forEach(sel => {
+        document.querySelectorAll('.filter-select, .filter-input').forEach(sel => {
             sel.addEventListener('change', aplicarFiltros);
         });
     } catch (err) {
         document.getElementById('loading').innerHTML = `
-            <p style="color:#ff6b00;">No hay datos disponibles.</p>
-            <p style="color:#94a3b8;margin-top:10px;">Sube un Excel desde el index.html.</p>
+            <p style="color:#F26F2B;">No hay datos disponibles.</p>
+            <p style="color:#5A7A8F;margin-top:10px;">Sube un Excel desde el index.html.</p>
         `;
+        console.error(err);
     }
 }
 
@@ -60,51 +69,50 @@ function num(v) {
     if (!v) return 0;
     return parseFloat(v.toString().replace(/[^0-9.-]/g, '')) || 0;
 }
-function money(v) { return 'S/ ' + v.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function moneyUSD(v) { return '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function moneySoles(v) { return 'S/ ' + v.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function ordenarMeses(labels) {
+    const orden = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SETIEMBRE','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+    return labels.sort((a, b) => orden.indexOf(a.toUpperCase()) - orden.indexOf(b.toUpperCase()));
+}
 
 // ============ RENDERIZADORES ============
 function tooltipStyle() {
-    return { backgroundColor: '#0F172A', titleColor: '#FF6B00', bodyColor: '#FFFFFF', borderColor: '#FF6B00', borderWidth: 1, padding: 12, cornerRadius: 8 };
+    return {
+        backgroundColor: '#156082',
+        titleColor: '#FFFFFF',
+        bodyColor: '#FFFFFF',
+        borderColor: '#3A82C8',
+        borderWidth: 1,
+        padding: 12,
+        cornerRadius: 8
+    };
 }
 
-function renderLine(id, labels, data) {
+function renderLine(id, labels, data, color) {
     const ctx = document.getElementById(id);
     if (!ctx) return;
     if (charts[id]) charts[id].destroy();
     charts[id] = new Chart(ctx, {
         type: 'line',
-        data: { labels, datasets: [{ data, borderColor: COLORS.accent, backgroundColor: 'rgba(255, 107, 0, 0.1)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: COLORS.accent, pointBorderColor: '#1E293B', pointBorderWidth: 2, pointRadius: 5 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: tooltipStyle() }, scales: { x: { ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: COLORS.textDim }, grid: { color: 'rgba(148,163,184,0.1)' } } } }
-    });
-}
-
-function renderGrouped(id, labels, d1, d2) {
-    const ctx = document.getElementById(id);
-    if (!ctx) return;
-    if (charts[id]) charts[id].destroy();
-    charts[id] = new Chart(ctx, {
-        type: 'bar',
-        data: { labels, datasets: [
-            { label: 'Usado', data: d1, backgroundColor: COLORS.accent, borderRadius: 4, barThickness: 16 },
-            { label: 'Stock', data: d2, backgroundColor: COLORS.cyan, borderRadius: 4, barThickness: 16 }
-        ]},
+        data: { labels, datasets: [{ data, borderColor: color || COLORS.primary, backgroundColor: 'rgba(58, 130, 200, 0.1)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: color || COLORS.primary, pointBorderColor: '#FFFFFF', pointBorderWidth: 2, pointRadius: 5 }] },
         options: { responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { labels: { color: COLORS.textDim, font: { family: 'Inter', size: 11 } } }, tooltip: tooltipStyle() },
-            scales: { x: { ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: COLORS.textDim }, grid: { color: 'rgba(148,163,184,0.1)' } } }
+            plugins: { legend: { display: false }, tooltip: tooltipStyle() },
+            scales: { x: { ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: COLORS.textDim }, grid: { color: 'rgba(214, 228, 240, 0.5)' } } }
         }
     });
 }
 
-function renderStacked(id, labels, datasets) {
+function renderBar(id, labels, data, color) {
     const ctx = document.getElementById(id);
     if (!ctx) return;
     if (charts[id]) charts[id].destroy();
     charts[id] = new Chart(ctx, {
         type: 'bar',
-        data: { labels, datasets },
+        data: { labels, datasets: [{ data, backgroundColor: color || COLORS.primary, borderRadius: 6, borderSkipped: false, barThickness: 24 }] },
         options: { responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom', labels: { color: COLORS.textDim, font: { family: 'Inter', size: 10 }, usePointStyle: true, boxWidth: 8 } }, tooltip: tooltipStyle() },
-            scales: { x: { stacked: true, ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { display: false } }, y: { stacked: true, beginAtZero: true, ticks: { color: COLORS.textDim }, grid: { color: 'rgba(148,163,184,0.1)' } } }
+            plugins: { legend: { display: false }, tooltip: tooltipStyle() },
+            scales: { x: { ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: COLORS.textDim }, grid: { color: 'rgba(214, 228, 240, 0.5)' } } }
         }
     });
 }
@@ -115,10 +123,10 @@ function renderHBar(id, labels, data, color) {
     if (charts[id]) charts[id].destroy();
     charts[id] = new Chart(ctx, {
         type: 'bar',
-        data: { labels, datasets: [{ data, backgroundColor: color, borderRadius: 6, borderSkipped: false, barThickness: 16 }] },
+        data: { labels, datasets: [{ data, backgroundColor: color || COLORS.primary, borderRadius: 6, borderSkipped: false, barThickness: 16 }] },
         options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false }, tooltip: tooltipStyle() },
-            scales: { x: { ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { color: 'rgba(148,163,184,0.1)' } }, y: { ticks: { color: '#fff', font: { family: 'Inter', size: 10 } }, grid: { display: false } } }
+            scales: { x: { ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { color: 'rgba(214, 228, 240, 0.5)' } }, y: { ticks: { color: COLORS.primaryDark, font: { family: 'Inter', size: 10 } }, grid: { display: false } } }
         }
     });
 }
@@ -129,57 +137,125 @@ function renderDoughnut(id, labels, data) {
     if (charts[id]) charts[id].destroy();
     charts[id] = new Chart(ctx, {
         type: 'doughnut',
-        data: { labels, datasets: [{ data, backgroundColor: PALETTE.slice(0, labels.length), borderColor: '#1E293B', borderWidth: 3 }] },
+        data: { labels, datasets: [{ data, backgroundColor: PALETTE_DONUT.slice(0, labels.length), borderColor: '#FFFFFF', borderWidth: 3 }] },
         options: { responsive: true, maintainAspectRatio: false, cutout: '65%',
-            plugins: { legend: { position: 'bottom', labels: { color: COLORS.textDim, font: { family: 'Inter', size: 11 }, padding: 12, usePointStyle: true, boxWidth: 8 } }, tooltip: tooltipStyle() } }
+            plugins: {
+                legend: { position: 'bottom', labels: { color: COLORS.textDim, font: { family: 'Inter', size: 11 }, padding: 12, usePointStyle: true, boxWidth: 8 } },
+                tooltip: tooltipStyle()
+            }
+        }
+    });
+}
+
+// Gráfico combinado: barras + línea
+function renderCombo(id, labels, barData, lineData, barColor, lineColor) {
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+    if (charts[id]) charts[id].destroy();
+    charts[id] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                {
+                    type: 'bar',
+                    label: 'Venta USD',
+                    data: barData,
+                    backgroundColor: barColor,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    yAxisID: 'y',
+                    barThickness: 30
+                },
+                {
+                    type: 'line',
+                    label: 'Despachos',
+                    data: lineData,
+                    borderColor: lineColor,
+                    backgroundColor: lineColor,
+                    borderWidth: 3,
+                    tension: 0.4,
+                    pointBackgroundColor: lineColor,
+                    pointBorderColor: '#FFFFFF',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: COLORS.textDim, font: { family: 'Inter', size: 11 }, usePointStyle: true, boxWidth: 8 } },
+                tooltip: tooltipStyle()
+            },
+            scales: {
+                x: { ticks: { color: COLORS.textDim, font: { family: 'Inter', size: 10 } }, grid: { display: false } },
+                y: {
+                    beginAtZero: true,
+                    position: 'left',
+                    ticks: { color: COLORS.textDim },
+                    grid: { color: 'rgba(214, 228, 240, 0.5)' }
+                },
+                y1: {
+                    beginAtZero: true,
+                    position: 'right',
+                    ticks: { color: COLORS.primaryDark },
+                    grid: { display: false }
+                }
+            }
+        }
     });
 }
 
 // ============ KPIs ============
 function calcularKPIs() {
-    const cIngresada = col('Cantidad Ingresada');
-    const cUsada = col('Cantidad Usada');
-    const cStock = col('Stock Actual');
-    const cCostoTotal = col('Costo Total (S/)') || col('Costo Total');
-    const cMateria = col('Materia Prima');
-    const cArea = col('Área Destino');
+    const cDespacho = col('CANTIDAD DE DESPACHOS') || col('CANT_DESPACHOS');
+    const cVolumen = col('VOLUMEN M3');
+    const cUSD = col('VALOR DE_VENTA_$') || col('VALOR DE VENTA_$');
+    const cSoles = col('VALOR DE_VENTA_S/.') || col('VALOR DE VENTA_S/.');
+    const cPais = col('COUNTRY');
+    const cCliente = col('NOMBRE_CLIENTE');
 
-    let totalIng = 0, totalUsa = 0, totalStock = 0, totalCosto = 0;
-    const materias = new Set(), areas = new Set();
+    let despachos = 0, volumen = 0, usd = 0, soles = 0;
+    const paises = new Set(), clientes = new Set();
 
     dataGlobal.forEach(f => {
-        totalIng += num(f[cIngresada]);
-        totalUsa += num(f[cUsada]);
-        totalStock += num(f[cStock]);
-        totalCosto += num(f[cCostoTotal]);
-        if (f[cMateria]) materias.add(norm(f[cMateria]));
-        if (f[cArea]) areas.add(norm(f[cArea]));
+        despachos += num(f[cDespacho]);
+        volumen += num(f[cVolumen]);
+        usd += num(f[cUSD]);
+        soles += num(f[cSoles]);
+        if (f[cPais]) paises.add(norm(f[cPais]));
+        if (f[cCliente]) clientes.add(norm(f[cCliente]));
     });
 
     document.getElementById('kpiRow').innerHTML = `
         <div class="kpi-card"><div class="kpi-icon-circle"><i class="fas fa-boxes-stacked"></i></div>
-            <div class="kpi-content"><span class="kpi-title">Ingresado</span><span class="kpi-main">${totalIng.toFixed(0)}</span><span class="kpi-trend trend-up">Unidades</span></div></div>
-        <div class="kpi-card"><div class="kpi-icon-circle icon-cyan"><i class="fas fa-industry"></i></div>
-            <div class="kpi-content"><span class="kpi-title">Usado</span><span class="kpi-main">${totalUsa.toFixed(0)}</span><span class="kpi-trend trend-up">Unidades</span></div></div>
-        <div class="kpi-card"><div class="kpi-icon-circle icon-green"><i class="fas fa-warehouse"></i></div>
-            <div class="kpi-content"><span class="kpi-title">Stock Actual</span><span class="kpi-main">${totalStock.toFixed(0)}</span><span class="kpi-trend trend-up">Disponible</span></div></div>
-        <div class="kpi-card"><div class="kpi-icon-circle icon-yellow"><i class="fas fa-coins"></i></div>
-            <div class="kpi-content"><span class="kpi-title">Costo Total</span><span class="kpi-main">${money(totalCosto)}</span><span class="kpi-trend trend-up">Acumulado</span></div></div>
-        <div class="kpi-card"><div class="kpi-icon-circle icon-orange"><i class="fas fa-lemon"></i></div>
-            <div class="kpi-content"><span class="kpi-title">Materias</span><span class="kpi-main">${materias.size}</span><span class="kpi-trend trend-up">Tipos</span></div></div>
-        <div class="kpi-card"><div class="kpi-icon-circle icon-red"><i class="fas fa-map-marker-alt"></i></div>
-            <div class="kpi-content"><span class="kpi-title">Áreas</span><span class="kpi-main">${areas.size}</span><span class="kpi-trend trend-up">Destinos</span></div></div>
+            <div class="kpi-content"><span class="kpi-title">Despachos</span><span class="kpi-main">${despachos}</span><span class="kpi-trend">Total</span></div></div>
+        <div class="kpi-card"><div class="kpi-icon-circle icon-cyan"><i class="fas fa-cube"></i></div>
+            <div class="kpi-content"><span class="kpi-title">Volumen m³</span><span class="kpi-main">${volumen.toLocaleString('en-US', { maximumFractionDigits: 1 })}</span><span class="kpi-trend">Total</span></div></div>
+        <div class="kpi-card"><div class="kpi-icon-circle icon-green"><i class="fas fa-dollar-sign"></i></div>
+            <div class="kpi-content"><span class="kpi-title">Venta USD</span><span class="kpi-main">${moneyUSD(usd)}</span><span class="kpi-trend">Total</span></div></div>
+        <div class="kpi-card"><div class="kpi-icon-circle icon-orange"><i class="fas fa-coins"></i></div>
+            <div class="kpi-content"><span class="kpi-title">Venta S/</span><span class="kpi-main">${moneySoles(soles)}</span><span class="kpi-trend">Total</span></div></div>
+        <div class="kpi-card"><div class="kpi-icon-circle icon-cyan"><i class="fas fa-globe"></i></div>
+            <div class="kpi-content"><span class="kpi-title">Países</span><span class="kpi-main">${paises.size}</span><span class="kpi-trend">Destinos</span></div></div>
+        <div class="kpi-card"><div class="kpi-icon-circle icon-green"><i class="fas fa-users"></i></div>
+            <div class="kpi-content"><span class="kpi-title">Clientes</span><span class="kpi-main">${clientes.size}</span><span class="kpi-trend">Únicos</span></div></div>
     `;
 
-    document.getElementById('centerTotal').textContent = totalCosto.toFixed(0);
-    document.getElementById('centerTotalArea').textContent = totalStock.toFixed(0);
+    const center = document.getElementById('centerTotal');
+    if (center) center.textContent = despachos;
 }
 
 // ============ FILTROS ============
 function cargarFiltros() {
-    llenar('filterMateria', 'Materia Prima');
-    llenar('filterArea', 'Área Destino');
-    llenar('filterProveedor', 'Proveedor');
+    llenar('filterMes', 'MES');
+    llenar('filterSemana', 'SEMANA');
+    llenar('filterUnidad', 'TIPO DE UNIDAD');
+    llenar('filterPais', 'COUNTRY');
+    llenar('filterIncoterm', 'INCOTERMS');
 }
 
 function llenar(id, columna) {
@@ -198,149 +274,170 @@ function llenar(id, columna) {
 }
 
 function aplicarFiltros() {
-    const m = document.getElementById('filterMateria').value;
-    const a = document.getElementById('filterArea').value;
-    const p = document.getElementById('filterProveedor').value;
+    const fecha = document.getElementById('filterFecha').value;
+    const mes = document.getElementById('filterMes').value;
+    const semana = document.getElementById('filterSemana').value;
+    const unidad = document.getElementById('filterUnidad').value;
+    const pais = document.getElementById('filterPais').value;
+    const incoterm = document.getElementById('filterIncoterm').value;
 
-    const cM = col('Materia Prima'), cA = col('Área Destino'), cP = col('Proveedor');
+    const cFecha = col('FECHA_TRANSACCION');
+    const cMes = col('MES');
+    const cSem = col('SEMANA');
+    const cUni = col('TIPO DE UNIDAD');
+    const cPais = col('COUNTRY');
+    const cInc = col('INCOTERMS');
 
-    const filt = dataGlobal.filter(f => {
-        if (m && norm(f[cM]) !== m) return false;
-        if (a && norm(f[cA]) !== a) return false;
-        if (p && norm(f[cP]) !== p) return false;
+    const backup = dataGlobal;
+    dataGlobal = backup.filter(f => {
+        if (fecha) {
+            const fechaFila = norm(f[cFecha]).split(' ')[0];
+            if (fechaFila !== fecha) return false;
+        }
+        if (mes && norm(f[cMes]) !== mes) return false;
+        if (semana && norm(f[cSem]) !== semana) return false;
+        if (unidad && norm(f[cUni]) !== unidad) return false;
+        if (pais && norm(f[cPais]) !== pais) return false;
+        if (incoterm && norm(f[cInc]) !== incoterm) return false;
         return true;
     });
 
-    const backup = dataGlobal;
-    dataGlobal = filt;
     calcularKPIs();
     crearGraficos();
-    crearTablaResumen();
+    crearTablas();
     dataGlobal = backup;
 }
 
 // ============ GRÁFICOS ============
 function crearGraficos() {
-    const cFecha = col('Fecha');
-    const cMateria = col('Materia Prima');
-    const cIngresada = col('Cantidad Ingresada');
-    const cUsada = col('Cantidad Usada');
-    const cStock = col('Stock Actual');
-    const cProveedor = col('Proveedor');
-    const cCostoTotal = col('Costo Total (S/)') || col('Costo Total');
-    const cArea = col('Área Destino');
+    const cMes = col('MES');
+    const cSem = col('SEMANA');
+    const cUSD = col('VALOR DE_VENTA_$') || col('VALOR DE VENTA_$');
+    const cVol = col('VOLUMEN M3');
+    const cDesp = col('CANTIDAD DE DESPACHOS') || col('CANT_DESPACHOS');
+    const cTransp = col('TRANSPORTE');
+    const cUni = col('TIPO DE UNIDAD');
+    const cPais = col('COUNTRY');
+    const cInc = col('INCOTERMS');
 
-    // 1. Evolución de ingreso de limón por fecha
-    const porFecha = {};
-    dataGlobal.filter(f => norm(f[cMateria]).toLowerCase().includes('limón') || norm(f[cMateria]).toLowerCase().includes('limon'))
-        .forEach(f => {
-            const fecha = norm(f[cFecha]);
-            porFecha[fecha] = (porFecha[fecha] || 0) + num(f[cIngresada]);
-        });
-    const fechasOrdenadas = Object.keys(porFecha).sort((a, b) => {
-        const [da, ma, ya] = a.split('/');
-        const [db, mb, yb] = b.split('/');
-        return new Date(ya, ma - 1, da) - new Date(yb, mb - 1, db);
-    });
-    renderLine('chartEvolucion', fechasOrdenadas, fechasOrdenadas.map(f => porFecha[f]));
-
-    // 2. Uso vs Stock por materia prima
-    const porMateriaUso = {}, porMateriaStock = {};
+    // 1. Facturación por mes
+    const porMesUSD = {};
     dataGlobal.forEach(f => {
-        const m = norm(f[cMateria]);
-        if (!m) return;
-        porMateriaUso[m] = (porMateriaUso[m] || 0) + num(f[cUsada]);
-        porMateriaStock[m] = (porMateriaStock[m] || 0) + num(f[cStock]);
+        const m = norm(f[cMes]) || 'Sin mes';
+        porMesUSD[m] = (porMesUSD[m] || 0) + num(f[cUSD]);
     });
-    renderGrouped('chartUsoStock', Object.keys(porMateriaUso), Object.values(porMateriaUso), Object.values(porMateriaStock));
+    const mesesOrdenados = ordenarMeses(Object.keys(porMesUSD));
+    renderLine('chartFactMes', mesesOrdenados, mesesOrdenados.map(m => porMesUSD[m]), COLORS.primary);
 
-    // 3. Distribución de costos por materia prima
-    const porMateriaCosto = {};
+    // 2. Cantidad de despachos por mes
+    const porMesDesp = {};
     dataGlobal.forEach(f => {
-        const m = norm(f[cMateria]);
-        if (!m) return;
-        porMateriaCosto[m] = (porMateriaCosto[m] || 0) + num(f[cCostoTotal]);
+        const m = norm(f[cMes]) || 'Sin mes';
+        porMesDesp[m] = (porMesDesp[m] || 0) + num(f[cDesp]);
     });
-    renderDoughnut('chartCostos', Object.keys(porMateriaCosto), Object.values(porMateriaCosto));
+    renderLine('chartDespMes', mesesOrdenados, mesesOrdenados.map(m => porMesDesp[m]), COLORS.primaryDark);
 
-    // 4. Rendimiento: limón → jugo + aceite + cáscara
-    const rendimiento = {};
+    // 3. Volumen por mes
+    const porMesVol = {};
     dataGlobal.forEach(f => {
-        const fecha = norm(f[cFecha]);
-        const materia = norm(f[cMateria]).toLowerCase();
-        if (!rendimiento[fecha]) rendimiento[fecha] = { jugo: 0, aceite: 0, cascara: 0 };
-        if (materia.includes('jugo')) rendimiento[fecha].jugo += num(f[cIngresada]);
-        if (materia.includes('aceite')) rendimiento[fecha].aceite += num(f[cIngresada]);
-        if (materia.includes('cáscara') || materia.includes('cascara')) rendimiento[fecha].cascara += num(f[cIngresada]);
+        const m = norm(f[cMes]) || 'Sin mes';
+        porMesVol[m] = (porMesVol[m] || 0) + num(f[cVol]);
     });
-    const fechasRend = Object.keys(rendimiento).sort((a, b) => {
-        const [da, ma, ya] = a.split('/');
-        const [db, mb, yb] = b.split('/');
-        return new Date(ya, ma - 1, da) - new Date(yb, mb - 1, db);
-    });
-    renderStacked('chartRendimiento', fechasRend, [
-        { label: 'Jugo', data: fechasRend.map(f => rendimiento[f].jugo), backgroundColor: COLORS.accent, borderRadius: 4 },
-        { label: 'Aceite', data: fechasRend.map(f => rendimiento[f].aceite), backgroundColor: COLORS.cyan, borderRadius: 4 },
-        { label: 'Cáscara', data: fechasRend.map(f => rendimiento[f].cascara), backgroundColor: COLORS.green, borderRadius: 4 }
-    ]);
+    renderLine('chartVolMes', mesesOrdenados, mesesOrdenados.map(m => porMesVol[m]), COLORS.green);
 
-    // 5. Costo total por proveedor
-    const porProveedor = {};
+    // 4. Despachos por semana
+    const porSemana = {};
     dataGlobal.forEach(f => {
-        const p = norm(f[cProveedor]) || 'Sin proveedor';
-        porProveedor[p] = (porProveedor[p] || 0) + num(f[cCostoTotal]);
+        const s = norm(f[cSem]) || 'Sin semana';
+        porSemana[s] = (porSemana[s] || 0) + num(f[cDesp]);
     });
-    const proveedoresOrdenados = Object.entries(porProveedor).sort((a, b) => b[1] - a[1]);
-    renderHBar('chartProveedor', proveedoresOrdenados.map(p => p[0]), proveedoresOrdenados.map(p => p[1]), COLORS.accent);
+    const semanasOrdenadas = Object.keys(porSemana).sort();
+    renderLine('chartDespSem', semanasOrdenadas, semanasOrdenadas.map(s => porSemana[s]), COLORS.orange);
 
-    // 6. Stock actual por área destino
-    const porArea = {};
+    // 5. Despachos por proveedor de transporte (ANILLO)
+    const porTransp = {};
     dataGlobal.forEach(f => {
-        const a = norm(f[cArea]) || 'Sin área';
-        porArea[a] = (porArea[a] || 0) + num(f[cStock]);
+        const t = norm(f[cTransp]) || 'Sin transporte';
+        porTransp[t] = (porTransp[t] || 0) + num(f[cDesp]);
     });
-    renderDoughnut('chartArea', Object.keys(porArea), Object.values(porArea));
+    renderDoughnut('chartTransporte', Object.keys(porTransp), Object.values(porTransp));
+
+    // 6. Despachos por tipo de unidad
+    const porUni = {};
+    dataGlobal.forEach(f => {
+        const u = norm(f[cUni]) || 'Sin tipo';
+        porUni[u] = (porUni[u] || 0) + num(f[cDesp]);
+    });
+    renderBar('chartTipoUnidad', Object.keys(porUni), Object.values(porUni), COLORS.primary);
+
+    // 7. Venta y despachos por país (COMBO)
+    const porPaisUSD = {}, porPaisDesp = {};
+    dataGlobal.forEach(f => {
+        const p = norm(f[cPais]) || 'Sin país';
+        porPaisUSD[p] = (porPaisUSD[p] || 0) + num(f[cUSD]);
+        porPaisDesp[p] = (porPaisDesp[p] || 0) + num(f[cDesp]);
+    });
+    const paisesArr = Object.keys(porPaisUSD).sort((a, b) => porPaisUSD[b] - porPaisUSD[a]).slice(0, 10);
+    renderCombo('chartPais', paisesArr, paisesArr.map(p => porPaisUSD[p]), paisesArr.map(p => porPaisDesp[p]), COLORS.primary, COLORS.orange);
+
+    // 8. Venta y despachos por incoterm (COMBO)
+    const porIncUSD = {}, porIncDesp = {};
+    dataGlobal.forEach(f => {
+        const i = norm(f[cInc]) || 'Sin incoterm';
+        porIncUSD[i] = (porIncUSD[i] || 0) + num(f[cUSD]);
+        porIncDesp[i] = (porIncDesp[i] || 0) + num(f[cDesp]);
+    });
+    const incArr = Object.keys(porIncUSD).sort((a, b) => porIncUSD[b] - porIncUSD[a]);
+    renderCombo('chartIncoterm', incArr, incArr.map(i => porIncUSD[i]), incArr.map(i => porIncDesp[i]), COLORS.primaryDark, COLORS.green);
 }
 
-// ============ TABLA ============
-function crearTablaResumen() {
-    const cFecha = col('Fecha');
-    const cMateria = col('Materia Prima');
-    const cUnidad = col('Unidad');
-    const cIngresada = col('Cantidad Ingresada');
-    const cUsada = col('Cantidad Usada');
-    const cStock = col('Stock Actual');
-    const cProveedor = col('Proveedor');
-    const cCostoUnit = col('Costo Unitario (S/)') || col('Costo Unitario');
-    const cCostoTotal = col('Costo Total (S/)') || col('Costo Total');
-    const cArea = col('Área Destino');
+// ============ TABLAS ============
+function crearTablas() {
+    const cCliente = col('NOMBRE_CLIENTE');
+    const cUSD = col('VALOR DE_VENTA_$') || col('VALOR DE VENTA_$');
+    const cSoles = col('VALOR DE_VENTA_S/.') || col('VALOR DE VENTA_S/.');
+    const cDesp = col('CANTIDAD DE DESPACHOS') || col('CANT_DESPACHOS');
 
-    let html = '<table><thead><tr>';
-    html += '<th>Fecha</th><th>Materia</th><th>Unidad</th><th>Ingresado</th><th>Usado</th><th>Stock</th><th>Proveedor</th><th>Costo Unit.</th><th>Costo Total</th><th>Área</th>';
-    html += '</tr></thead><tbody>';
-
+    // Agrupar por cliente
+    const porCliente = {};
     dataGlobal.forEach(f => {
-        html += `<tr>
-            <td>${norm(f[cFecha])}</td>
-            <td>${norm(f[cMateria])}</td>
-            <td>${norm(f[cUnidad])}</td>
-            <td>${num(f[cIngresada])}</td>
-            <td>${num(f[cUsada])}</td>
-            <td>${num(f[cStock])}</td>
-            <td>${norm(f[cProveedor])}</td>
-            <td>${money(num(f[cCostoUnit]))}</td>
-            <td>${money(num(f[cCostoTotal]))}</td>
-            <td>${norm(f[cArea])}</td>
-        </tr>`;
+        const c = norm(f[cCliente]) || 'Sin cliente';
+        if (!porCliente[c]) porCliente[c] = { usd: 0, soles: 0, desp: 0 };
+        porCliente[c].usd += num(f[cUSD]);
+        porCliente[c].soles += num(f[cSoles]);
+        porCliente[c].desp += num(f[cDesp]);
     });
 
+    const clientesArr = Object.entries(porCliente).sort((a, b) => b[1].usd - a[1].usd);
+
+    // Top 5 mayor venta
+    const top5 = clientesArr.slice(0, 5);
+    // Top 5 menor venta (excluyendo los que tienen 0 ventas, y los primeros 5)
+    const bottom5 = clientesArr.filter(c => c[1].usd > 0).slice(-5).reverse();
+
+    document.getElementById('tablaTopClientes').innerHTML = generarTablaHTML(top5);
+    document.getElementById('tablaBottomClientes').innerHTML = generarTablaHTML(bottom5);
+}
+
+function generarTablaHTML(arr) {
+    let html = '<table><thead><tr><th>Cliente</th><th>Venta $</th><th>Venta S/</th><th>Desp.</th></tr></thead><tbody>';
+    arr.forEach(([nombre, d]) => {
+        html += `<tr>
+            <td>${nombre.substring(0, 35)}</td>
+            <td>${moneyUSD(d.usd)}</td>
+            <td>${moneySoles(d.soles)}</td>
+            <td>${d.desp}</td>
+        </tr>`;
+    });
     html += '</tbody></table>';
-    document.getElementById('tablaResumen').innerHTML = html;
+    return html;
 }
 
 // ============ LIMPIAR ============
 document.getElementById('clearFilters')?.addEventListener('click', () => {
     document.querySelectorAll('.filter-select').forEach(sel => sel.value = '');
+    const fechaInput = document.getElementById('filterFecha');
+    if (fechaInput) fechaInput.value = '';
     aplicarFiltros();
 });
 
