@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Producción Agroindustrial</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+</head>
+<body>
+
+<div id="loading" class="loading-screen">
+    <div class="loading-spinner"></div>
+    <p>Cargando dashboard...</p>
+</div>
+
+<nav class="dash-tabs" id="dashTabs" style="display: none;">
+    <a href="#" class="tab active" data-seccion="resumen"><i class="fas fa-chart-pie"></i> Resumen</a>
+    <a href="#" class="tab" data-seccion="producto"><i class="fas fa-boxes-stacked"></i> Por Producto</a>
+    <a href="#" class="tab" data-seccion="proceso"><i class="fas fa-gears"></i> Molienda / Extrusión</a>
+    <a href="#" class="tab" data-seccion="detalle"><i class="fas fa-table"></i> Detalle</a>
+</nav>
+
+<!-- RESUMEN -->
+<div id="resumen" class="dashboard-section" style="display:none;">
+    <header class="exec-header">
+        <div class="exec-title">
+            <div class="exec-logo"><i class="fas fa-chart-pie"></i></div>
+            <div><h1>Resumen General</h1><span class="exec-subtitle">Producción · Merma · Rendimiento</span></div>
+        </div>
+        <div class="exec-actions"><span class="exec-date"><i class="fas fa-calendar-alt"></i> <span id="fechaActual1"></span></span></div>
+    </header>
+    <section class="kpi-row" id="kpiResumen"></section>
+    <section class="filters-row">
+        <div class="filter-chip"><i class="fas fa-cube"></i><select id="filterProductoR" class="filter-select"><option value="">Producto</option></select></div>
+        <div class="filter-chip"><i class="fas fa-user-tie"></i><select id="filterResponsableR" class="filter-select"><option value="">Responsable</option></select></div>
+        <button id="clearResumen" class="btn-clear-chips"><i class="fas fa-eraser"></i> Limpiar</button>
+    </section>
+    <section class="charts-exec" id="chartsResumen"></section>
+</div>
+
+<!-- POR PRODUCTO -->
+<div id="producto" class="dashboard-section" style="display:none;">
+    <header class="exec-header">
+        <div class="exec-title">
+            <div class="exec-logo"><i class="fas fa-boxes-stacked"></i></div>
+            <div><h1>Por Producto</h1><span class="exec-subtitle">Rendimiento · Merma · Unidades</span></div>
+        </div>
+        <div class="exec-actions"><span class="exec-date"><i class="fas fa-calendar-alt"></i> <span id="fechaActual2"></span></span></div>
+    </header>
+    <section class="kpi-row" id="kpiProducto"></section>
+    <section class="filters-row">
+        <div class="filter-chip"><i class="fas fa-cube"></i><select id="filterProductoP" class="filter-select"><option value="">Producto</option></select></div>
+        <div class="filter-chip"><i class="fas fa-user-tie"></i><select id="filterResponsableP" class="filter-select"><option value="">Responsable</option></select></div>
+        <button id="clearProducto" class="btn-clear-chips"><i class="fas fa-eraser"></i> Limpiar</button>
+    </section>
+    <section class="charts-exec" id="chartsProducto"></section>
+</div>
+
+<!-- MOLIENDA / EXTRUSIÓN -->
+<div id="proceso" class="dashboard-section" style="display:none;">
+    <header class="exec-header">
+        <div class="exec-title">
+            <div class="exec-logo"><i class="fas fa-gears"></i></div>
+            <div><h1>Molienda / Extrusión</h1><span class="exec-subtitle">Horas · Merma · Pérdidas</span></div>
+        </div>
+        <div class="exec-actions"><span class="exec-date"><i class="fas fa-calendar-alt"></i> <span id="fechaActual3"></span></span></div>
+    </header>
+    <section class="kpi-row" id="kpiProceso"></section>
+    <section class="filters-row">
+        <div class="filter-chip"><i class="fas fa-cube"></i><select id="filterProductoM" class="filter-select"><option value="">Producto</option></select></div>
+        <div class="filter-chip"><i class="fas fa-user-tie"></i><select id="filterResponsableM" class="filter-select"><option value="">Responsable</option></select></div>
+        <button id="clearProceso" class="btn-clear-chips"><i class="fas fa-eraser"></i> Limpiar</button>
+    </section>
+    <section class="charts-exec" id="chartsProceso"></section>
+</div>
+
+<!-- DETALLE -->
+<div id="detalle" class="dashboard-section" style="display:none;">
+    <header class="exec-header">
+        <div class="exec-title">
+            <div class="exec-logo"><i class="fas fa-table"></i></div>
+            <div><h1>Detalle de Producción</h1><span class="exec-subtitle">Registro completo</span></div>
+        </div>
+        <div class="exec-actions"><span class="exec-date"><i class="fas fa-calendar-alt"></i> <span id="fechaActual4"></span></span></div>
+    </header>
+    <section class="filters-row">
+        <div class="filter-chip"><i class="fas fa-cube"></i><select id="filterProductoD" class="filter-select"><option value="">Producto</option></select></div>
+        <div class="filter-chip"><i class="fas fa-user-tie"></i><select id="filterResponsableD" class="filter-select"><option value="">Responsable</option></select></div>
+        <button id="clearDetalle" class="btn-clear-chips"><i class="fas fa-eraser"></i> Limpiar</button>
+    </section>
+    <section class="charts-exec">
+        <div class="chart-exec-card chart-full-table">
+            <div class="chart-exec-header"><i class="fas fa-list chart-icon"></i><h3>Detalle completo</h3></div>
+            <div id="tablaDetalle" class="tabla-scroll"></div>
+        </div>
+    </section>
+</div>
+
+<script src="js/dashboard.js"></script>
+</body>
+</html>
